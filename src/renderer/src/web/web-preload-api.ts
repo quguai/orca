@@ -2877,7 +2877,7 @@ function createSkillsApi(): NonNullable<Partial<PreloadApi>['skills']> {
     confirmGitInstall: localOnly,
     checkUpdate: localOnly,
     checkAllUpdates: () => Promise.resolve(),
-    scanInstalledSkills: () => Promise.resolve(),
+    scanInstalledSkills: () => Promise.resolve([]),
     batchImportFolder: () => Promise.resolve([]),
     syncToTool: () => Promise.resolve(),
     unsyncFromTool: () => Promise.resolve(),

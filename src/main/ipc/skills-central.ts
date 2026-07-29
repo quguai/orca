@@ -88,8 +88,8 @@ export function registerCentralSkillsHandlers(_store: Store): void {
     }
   })
 
-  ipcMain.handle('skills:scanInstalledSkills', async (): Promise<void> => {
-    await repo.scanCentralRepo()
+  ipcMain.handle('skills:scanInstalledSkills', async (): Promise<CentralSkill[]> => {
+    return repo.scanInstalledSkills()
   })
 
   ipcMain.handle(

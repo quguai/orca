@@ -2555,7 +2555,8 @@ const api = {
 
     checkAllUpdates: (): Promise<void> => ipcRenderer.invoke('skills:checkAllUpdates'),
 
-    scanInstalledSkills: (): Promise<void> => ipcRenderer.invoke('skills:scanInstalledSkills'),
+    scanInstalledSkills: (): Promise<CentralSkill[]> =>
+      ipcRenderer.invoke('skills:scanInstalledSkills'),
 
     batchImportFolder: (args: { path: string }): Promise<CentralSkill[]> =>
       ipcRenderer.invoke('skills:batchImportFolder', args),

@@ -5,7 +5,11 @@ import { LocalSection } from './install-local-section'
 import { MarketSection } from './install-market-section'
 import type { SkillsInstallTab as SkillsInstallTabValue } from './skills-page-tabs'
 
-export function SkillsInstallTab(): React.JSX.Element {
+export function SkillsInstallTab({
+  onSkillsChanged
+}: {
+  onSkillsChanged: () => Promise<void>
+}): React.JSX.Element {
   const installTab = useAppStore((s) => s.skillsViewInstallTab)
   const setInstallTab = useAppStore((s) => s.setSkillsViewInstallTab)
 
@@ -42,9 +46,9 @@ export function SkillsInstallTab(): React.JSX.Element {
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto p-4">
+      <div className="scrollbar-sleek flex-1 overflow-auto p-4">
         {installTab === 'market' && <MarketSection />}
-        {installTab === 'local' && <LocalSection />}
+        {installTab === 'local' && <LocalSection onSkillsChanged={onSkillsChanged} />}
         {installTab === 'git' && <GitSection />}
       </div>
     </div>

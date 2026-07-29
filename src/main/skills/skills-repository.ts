@@ -4,6 +4,11 @@ import os from 'node:os'
 import path from 'node:path'
 import type { CentralSkill, ToolInfo } from '../../shared/skills'
 import { hashDirectory } from './content-hash'
+import {
+  defaultInstalledSkillRoots,
+  importUnmanagedInstalledSkills,
+  type InstalledSkillRoot
+} from './installed-skill-import'
 import { createLocalRecord, defaultStore, deduplicateByName, recordToCentral } from './skills-store'
 import type { SkillRecord, SkillsStore } from './skills-store'
 import { migrateIfNeeded } from './migration'
@@ -219,6 +224,22 @@ export class SkillsRepository {
     }
     Object.assign(skill, updates, { updatedAt: Date.now() })
     await this.save()
+  }
+
+  async scanInstalledSkills(
+    roots: readonly InstalledSkillRoot[] = defaultInstalledSkillRoots()
+  ): Promise<CentralSkill[]> {
+    await this.scanCentralRepo()
+    const centralRepo = await this.ensureCentralRepo()
+    const store = await this.load()
+    const imported = await importUnmanagedInstalledSkills({
+      centralRepoPath: centralRepo,
+      existingNames: new Set(store.skills.map((skill) => skill.name)),
+      roots
+    })
+    store.skills.push(...imported)
+    await this.save()
+    return imported.map(recordToCentral)
   }
 
   async scanCentralRepo(): Promise<void> {

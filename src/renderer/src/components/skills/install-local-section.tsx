@@ -5,7 +5,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { translate } from '@/i18n/i18n'
 
-export function LocalSection(): React.JSX.Element {
+export function LocalSection({
+  onSkillsChanged
+}: {
+  onSkillsChanged: () => Promise<void>
+}): React.JSX.Element {
   const [folderPath, setFolderPath] = useState('')
   const [batchPath, setBatchPath] = useState('')
   const [scanning, setScanning] = useState(false)
@@ -15,8 +19,13 @@ export function LocalSection(): React.JSX.Element {
   const handleScan = async (): Promise<void> => {
     setScanning(true)
     try {
-      await window.api.skills.scanInstalledSkills()
-      toast.success('Scan complete')
+      const imported = await window.api.skills.scanInstalledSkills()
+      await onSkillsChanged()
+      toast.success(
+        imported.length === 0
+          ? 'No new local skills found'
+          : `Imported ${imported.length} skill${imported.length === 1 ? '' : 's'}`
+      )
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Scan failed')
     } finally {

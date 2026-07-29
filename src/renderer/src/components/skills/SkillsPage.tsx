@@ -148,7 +148,7 @@ export default function SkillsPage(): React.JSX.Element {
         </div>
 
         <div className="min-h-0 flex-1 overflow-hidden">
-          <TabsContent value="dashboard" className="m-0 h-full overflow-auto">
+          <TabsContent value="dashboard" className="scrollbar-sleek m-0 h-full overflow-auto">
             <SkillsDashboardTab skills={skills} tools={tools} onSelectTab={setActiveTab} />
           </TabsContent>
           <TabsContent value="my-skills" className="m-0 h-full overflow-hidden">
@@ -164,9 +164,9 @@ export default function SkillsPage(): React.JSX.Element {
             />
           </TabsContent>
           <TabsContent value="install" className="m-0 h-full overflow-hidden">
-            <SkillsInstallTab />
+            <SkillsInstallTab onSkillsChanged={loadData} />
           </TabsContent>
-          <TabsContent value="workspaces" className="m-0 h-full overflow-auto">
+          <TabsContent value="workspaces" className="scrollbar-sleek m-0 h-full overflow-auto">
             <SkillsWorkspacesTab skills={skills} tools={tools} />
           </TabsContent>
         </div>
