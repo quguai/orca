@@ -258,6 +258,7 @@ export type ExternalAutomationJob = {
   lastError: string | null
   workdir: string | null
   runCount: number
+  runCountSaturated?: true
   runs: ExternalAutomationRun[]
 }
 
@@ -282,6 +283,7 @@ export type ExternalAutomationRunsPage = {
   page: number
   pageSize: number
   total: number
+  totalSaturated?: true
   runs: ExternalAutomationRun[]
 }
 

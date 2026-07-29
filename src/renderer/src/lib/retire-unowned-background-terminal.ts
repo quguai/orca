@@ -1,19 +1,28 @@
 import { useAppStore } from '@/store'
 import { callRuntimeRpc, type RuntimeClientTarget } from '@/runtime/runtime-rpc-client'
 import { isTerminalTabPresent } from '@/store/slices/terminal-tab-retirement'
+import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../shared/constants'
 
 export async function retireUnownedTerminal(args: {
-  tabId: string
+  /** Present tab id, or `{ worktreeId }` for a launch whose tab is created after the spawn. */
+  owner: { tabId: string } | { worktreeId: string }
   ptyId: string
   runtimeTarget: RuntimeClientTarget
   runtimeTerminalHandle?: string | null
   onRetire?: () => void
 }): Promise<boolean> {
-  if (isTerminalTabPresent(useAppStore.getState(), args.tabId)) {
+  const state = useAppStore.getState()
+  const owner = args.owner
+  const isOwned =
+    'tabId' in owner
+      ? isTerminalTabPresent(state, owner.tabId)
+      : // Folder workspaces exist only in getKnownWorktreeById.
+        owner.worktreeId === FLOATING_TERMINAL_WORKTREE_ID ||
+        state.getKnownWorktreeById(owner.worktreeId) !== undefined
+  if (isOwned) {
     return false
   }
-  // Why: close can win while provider creation is in flight, before the
-  // returned handle is bindable to store state or visible to tab retirement.
+  // Close can win before the provider is bindable to store state.
   args.onRetire?.()
   await retireProvider(args)
   return true

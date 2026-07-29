@@ -48,6 +48,7 @@ const TUI_AGENT_KIND_BY_AGENT = {
   grok: 'grok',
   devin: 'devin',
   ante: 'ante',
+  trae: 'trae',
   qoder: 'qoder'
 } satisfies Record<TuiAgent, ConcreteAgentKind>
 

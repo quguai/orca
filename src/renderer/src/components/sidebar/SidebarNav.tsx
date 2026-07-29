@@ -24,6 +24,12 @@ export function shouldShowAgentsButton(
   return settings?.experimentalActivity === true
 }
 
+export function shouldShowAgentDashboardButton(
+  settings: Pick<GlobalSettings, 'experimentalAgentDashboardPopout'> | null | undefined
+): boolean {
+  return settings?.experimentalAgentDashboardPopout === true
+}
+
 export function shouldShowMobileButton(
   settings: Pick<GlobalSettings, 'showMobileButton'> | null | undefined
 ): boolean {

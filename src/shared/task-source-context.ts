@@ -7,6 +7,7 @@ import {
   toSshExecutionHostId
 } from './execution-host'
 import type { GlobalSettings, ProjectProviderIdentity, Repo } from './types'
+import { githubRepoIdentityKey } from './github-repository-identity-key'
 
 export type TaskProvider = 'github' | 'gitlab' | 'linear' | 'jira' | 'aone' | 'local'
 
@@ -224,7 +225,7 @@ function providerIdentityCachePart(identity: TaskProviderIdentity | null | undef
   }
   switch (identity.provider) {
     case 'github':
-      return [identity.owner, identity.repo].join('/')
+      return githubRepoIdentityKey(identity)
     case 'gitlab':
       return identity.projectId ?? [identity.namespace, identity.project].filter(Boolean).join('/')
     case 'linear':

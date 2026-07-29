@@ -24,6 +24,7 @@ import type {
 import { translate } from '@/i18n/i18n'
 import { WorktreeCardReviewDetailSection } from './WorktreeCardReviewDetailSection'
 import { WorktreeCardAutomationDetailSection } from './WorktreeCardAutomationDetailSection'
+import { WorktreeCardCliDetailSection } from './WorktreeCardCliDetailSection'
 import { WorktreeCardIssueDetailSection } from './WorktreeCardIssueDetailSection'
 import { WorktreeCardHoverIdentityHeader } from './WorktreeCardHoverIdentityHeader'
 import {
@@ -154,6 +155,7 @@ export function WorktreeCardDetailsHover({
   review,
   comment,
   automationProvenance,
+  cliProvenance,
   children,
   branchName,
   workspaceTitle,
@@ -342,6 +344,8 @@ export function WorktreeCardDetailsHover({
               }
             />
           )}
+
+          {cliProvenance && <WorktreeCardCliDetailSection provenance={cliProvenance} />}
 
           {hasComment(comment) && (
             <WorktreeCardDetailSection>

@@ -44,7 +44,8 @@ describe('worktree RPC methods', () => {
     expect(response).toMatchObject({ ok: true })
     expect(runtime.activateManagedWorktree).toHaveBeenCalledWith('id:wt-1', {
       notifyClients: false,
-      clientKind: undefined
+      clientKind: undefined,
+      navigation: 'caller'
     })
   })
 
@@ -69,7 +70,8 @@ describe('worktree RPC methods', () => {
 
     expect(runtime.activateManagedWorktree).toHaveBeenCalledWith('id:wt-1', {
       notifyClients: false,
-      clientKind: 'mobile'
+      clientKind: 'mobile',
+      navigation: 'caller'
     })
   })
 

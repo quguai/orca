@@ -50,14 +50,12 @@ const StatusIndicator = React.memo(function StatusIndicator({
       <span
         className={cn(
           'block size-2 rounded-full',
-          status === 'permission'
-            ? 'bg-amber-500'
-            : status === 'done' || status === 'active'
-              ? // Green dot for both hook-reported 'done' and the heuristic
-                // 'active' (terminal open, quiet). Working uses a yellow
-                // ring above; 'inactive' stays grey.
-                'bg-emerald-500'
-              : 'bg-neutral-500/40'
+          status === 'done' || status === 'active'
+            ? // Green dot for both hook-reported 'done' and the heuristic
+              // 'active' (terminal open, quiet). Working uses a yellow
+              // ring above; 'inactive' stays grey.
+              'bg-emerald-500'
+            : 'bg-neutral-500/40'
         )}
       />
     </span>

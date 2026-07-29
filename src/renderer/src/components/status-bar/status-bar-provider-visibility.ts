@@ -22,16 +22,17 @@ export type UsageProviderSettings = Pick<
 }
 
 type UsageProviderSnapshots = {
-  claude: ProviderRateLimits | null
-  codex: ProviderRateLimits | null
-  gemini: ProviderRateLimits | null
-  opencodeGo: ProviderRateLimits | null
-  kimi: ProviderRateLimits | null
-  zai: ProviderRateLimits | null
-  idealab: ProviderRateLimits | null
-  antigravity: ProviderRateLimits | null
-  minimax: ProviderRateLimits | null
-  grok: ProviderRateLimits | null
+  // Why: older main processes can omit newly added provider keys during a rolling desktop/web upgrade.
+  claude?: ProviderRateLimits | null
+  codex?: ProviderRateLimits | null
+  gemini?: ProviderRateLimits | null
+  opencodeGo?: ProviderRateLimits | null
+  kimi?: ProviderRateLimits | null
+  zai?: ProviderRateLimits | null
+  idealab?: ProviderRateLimits | null
+  antigravity?: ProviderRateLimits | null
+  minimax?: ProviderRateLimits | null
+  grok?: ProviderRateLimits | null
 }
 
 type UsageProviderId = ProviderRateLimits['provider']
@@ -46,8 +47,8 @@ function hasUsageData(provider: ProviderRateLimits): boolean {
   )
 }
 
-function isProviderSnapshotPending(provider: ProviderRateLimits | null): boolean {
-  return provider === null || (provider.status === 'fetching' && !hasUsageData(provider))
+function isProviderSnapshotPending(provider: ProviderRateLimits | null | undefined): boolean {
+  return provider == null || (provider.status === 'fetching' && !hasUsageData(provider))
 }
 
 // Why: a provider that returns `unavailable` is explicitly not configured
@@ -57,9 +58,11 @@ function isProviderSnapshotPending(provider: ProviderRateLimits | null): boolean
 // — that's a *configured* provider failing transiently, and hiding it would
 // make the bar flap on every refresh hiccup.
 export function isProviderConfigured(
-  provider: ProviderRateLimits | null
+  provider: ProviderRateLimits | null | undefined
 ): provider is ProviderRateLimits {
-  if (provider === null || provider.status === 'unavailable') {
+  // Why: renderer HMR can briefly run against an older main process whose rate-limit
+  // payload predates newer provider keys, so missing snapshots arrive as undefined.
+  if (provider == null || provider.status === 'unavailable') {
     return false
   }
   if (provider.status === 'fetching' && !hasUsageData(provider)) {
@@ -141,7 +144,7 @@ function createPendingProviderSnapshot(providerId: UsageProviderId): ProviderRat
 
 export function getVisibleUsageProvider(
   providerId: UsageProviderId,
-  provider: ProviderRateLimits | null,
+  provider: ProviderRateLimits | null | undefined,
   settings: Partial<UsageProviderSettings> | null | undefined
 ): ProviderRateLimits | null {
   if (isProviderConfigured(provider)) {
