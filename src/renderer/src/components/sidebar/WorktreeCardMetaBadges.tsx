@@ -2,6 +2,7 @@ import React from 'react'
 import { CalendarClock, CircleDot, SquareTerminal, StickyNote } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { LinearIcon } from '@/components/icons/LinearIcon'
+import { JiraIcon } from '@/components/icons/JiraIcon'
 import { MetaIconBadge } from './WorktreeCardMetadataControls'
 import { getReviewLabel, ReviewIcon } from './worktree-review-helpers'
 import type {
@@ -9,6 +10,7 @@ import type {
   WorktreeCardMetaBadgesRootProps
 } from './worktree-card-meta-types'
 import { translate } from '@/i18n/i18n'
+import { WorktreeCardLocalTaskBadge } from './WorktreeCardLocalTaskDetailSection'
 
 function hasComment(comment: string | null): boolean {
   return (comment ?? '').trim().length > 0
@@ -17,13 +19,22 @@ function hasComment(comment: string | null): boolean {
 export function hasWorktreeCardDetails({
   issue,
   linearIssue,
+  jiraIssue,
+  localTaskId,
   review,
   comment,
   automationProvenance,
   cliProvenance
 }: WorktreeCardMetaBadgesProps): boolean {
   return Boolean(
-    issue || linearIssue || review || hasComment(comment) || automationProvenance || cliProvenance
+    issue ||
+    linearIssue ||
+    jiraIssue ||
+    localTaskId ||
+    review ||
+    hasComment(comment) ||
+    automationProvenance ||
+    cliProvenance
   )
 }
 
@@ -31,13 +42,26 @@ export const WorktreeCardMetaBadges = React.forwardRef<
   HTMLDivElement,
   WorktreeCardMetaBadgesRootProps
 >(function WorktreeCardMetaBadges(
-  { issue, linearIssue, review, comment, automationProvenance, cliProvenance, className, ...props },
+  {
+    issue,
+    linearIssue,
+    jiraIssue,
+    localTaskId,
+    review,
+    comment,
+    automationProvenance,
+    cliProvenance,
+    className,
+    ...props
+  },
   ref
 ): React.JSX.Element | null {
   if (
     !hasWorktreeCardDetails({
       issue,
       linearIssue,
+      jiraIssue,
+      localTaskId,
       review,
       comment,
       automationProvenance,
@@ -89,6 +113,7 @@ export const WorktreeCardMetaBadges = React.forwardRef<
           <SquareTerminal className="text-muted-foreground" />
         </MetaIconBadge>
       )}
+      {localTaskId && <WorktreeCardLocalTaskBadge taskId={localTaskId} />}
       {issue && (
         <MetaIconBadge
           label={translate(
@@ -109,6 +134,17 @@ export const WorktreeCardMetaBadges = React.forwardRef<
           )}
         >
           <LinearIcon className="text-muted-foreground" />
+        </MetaIconBadge>
+      )}
+      {jiraIssue && (
+        <MetaIconBadge
+          label={translate(
+            'auto.components.sidebar.WorktreeCardMeta.linkedJira',
+            'Linked Jira {{value0}}',
+            { value0: jiraIssue.identifier }
+          )}
+        >
+          <JiraIcon className="text-muted-foreground" />
         </MetaIconBadge>
       )}
       {review && (

@@ -149,7 +149,7 @@ import {
   DialogTitle
 } from '@/components/ui/dialog'
 import { BaseRefPicker } from '@/components/settings/BaseRefPicker'
-import { useConfirmationDialog } from '@/components/confirmation-dialog'
+import { useConfirmationDialog } from '@/components/confirmation-dialog-context'
 import { formatDiffComment, formatDiffComments } from '@/lib/diff-comments-format'
 import { getDiffCommentLineLabel, getDiffCommentSource } from '@/lib/diff-comment-compat'
 import { DiffNotesSendMenu } from '@/components/editor/DiffNotesSendMenu'
@@ -266,11 +266,14 @@ import {
   getCreatePrIntentStagePaths,
   resolveCreatePrIntentReviewBase,
   resolveCreatePrIntentRemoteStep,
+  shouldAttemptCreateHostedReviewForIntent,
+  shouldGenerateHostedReviewDetailsForIntent,
   type CreatePrIntentRunToken
 } from './source-control-create-pr-intent-flow'
 import { resolveVisibleCreatePrHeaderAction } from './source-control-create-pr-intent-state'
 import { resolveBlockedCreateReviewNoticeMessage } from './source-control-create-review-blocked-action'
 import {
+  buildCreatePrIntentUnavailableEligibility,
   buildLoadingHostedReviewCreationEligibility,
   buildLocalBlockerHostedReviewCreationEligibility,
   resolveHostedReviewCreationProviderForTarget
@@ -1589,6 +1592,7 @@ function SourceControlInner(): React.JSX.Element {
     resolveHostedReviewCreationProviderForTarget(
       hostedReviewCreationProviderHintRef.current,
       { repoId: activeRepoId, worktreeId: activeWorktreeId ?? null, branch: branchName },
+      // Why: provisional already infers the remote host and defaults to github; never fall back to unsupported mid-load.
       provisionalHostedReviewProvider
     )
   )
@@ -1733,7 +1737,10 @@ function SourceControlInner(): React.JSX.Element {
       linkedAzureDevOpsPR,
       linkedGiteaPR,
       linkedCodeMR,
-      staleWhileRevalidate: true
+      staleWhileRevalidate: true,
+      // Why: scoped to the active worktree, so it earns the host's fast
+      // re-check tier instead of the O(N) card pacing (#11532).
+      active: true
     })
     // Why: keep the GitHub cache refresh behind the coordinator so Source Control doesn't bypass pacing.
     enqueueGitHubPRRefresh(activeWorktreeId, 'swr', 30)
@@ -3433,7 +3440,7 @@ function SourceControlInner(): React.JSX.Element {
       token: CreatePrIntentRunToken,
       eligibility: HostedReviewCreationEligibility
     ): Promise<boolean> => {
-      if (!activeRepo || !token.branch || !eligibility.canCreate) {
+      if (!activeRepo || !token.branch || !shouldAttemptCreateHostedReviewForIntent(eligibility)) {
         return false
       }
 
@@ -3465,6 +3472,7 @@ function SourceControlInner(): React.JSX.Element {
       }
 
       if (
+        shouldGenerateHostedReviewDetailsForIntent(eligibility) &&
         hasConfiguredSourceControlTextGenerationDefaults({
           actionId: 'pullRequest',
           settings,
@@ -3675,24 +3683,44 @@ function SourceControlInner(): React.JSX.Element {
       if (!activeRepo || !token.branch) {
         return null
       }
-      const result = await getHostedReviewCreationEligibility({
-        repoPath: activeRepo.path,
-        repoId: activeRepo.id,
-        worktreePath: token.worktreePath,
-        branch: token.branch,
-        base: token.baseRef ?? null,
-        hasUncommittedChanges,
-        hasUpstream: upstreamStatus?.hasUpstream,
-        ahead: upstreamStatus?.ahead,
-        behind: upstreamStatus?.behind,
-        linkedGitHubPR,
-        fallbackGitHubPR: fallbackGitHubPRNumber,
-        linkedGitLabMR,
-        linkedBitbucketPR,
-        linkedAzureDevOpsPR,
-        linkedGiteaPR,
-        linkedCodeMR
-      })
+      let result: HostedReviewCreationEligibility
+      try {
+        result = await getHostedReviewCreationEligibility({
+          repoPath: activeRepo.path,
+          repoId: activeRepo.id,
+          worktreePath: token.worktreePath,
+          branch: token.branch,
+          base: token.baseRef ?? null,
+          hasUncommittedChanges,
+          hasUpstream: upstreamStatus?.hasUpstream,
+          ahead: upstreamStatus?.ahead,
+          behind: upstreamStatus?.behind,
+          linkedGitHubPR,
+          fallbackGitHubPR: fallbackGitHubPRNumber,
+          linkedGitLabMR,
+          linkedBitbucketPR,
+          linkedAzureDevOpsPR,
+          linkedGiteaPR,
+          linkedCodeMR
+        })
+      } catch (error) {
+        console.warn('[SourceControl] Create PR intent eligibility failed', error)
+        // Why: when local status still yields a prep step (dirty/push/sync), keep the intent
+        // moving. If nothing actionable can be synthesized, rethrow so the outer intent
+        // catch surfaces a retry notice instead of leaving "Preparing…" stuck forever.
+        const fallback = buildCreatePrIntentUnavailableEligibility(token.provider, {
+          branch: token.branch,
+          baseRef: token.baseRef,
+          hasUncommittedChanges,
+          hasUpstream: upstreamStatus?.hasUpstream,
+          ahead: upstreamStatus?.ahead,
+          behind: upstreamStatus?.behind
+        })
+        if (!fallback) {
+          throw error
+        }
+        result = fallback
+      }
       setHostedReviewCreationState({
         repoId: activeRepo.id,
         worktreeId: token.worktreeId,
@@ -3765,6 +3793,9 @@ function SourceControlInner(): React.JSX.Element {
       worktreeId: activeWorktreeId,
       worktreePath,
       branch: branchName,
+      // Why: token carries the same provisional provider used for UI copy so a failed
+      // eligibility IPC can synthesize local prep steps for the correct host.
+      provider: provisionalHostedReviewProvider,
       // Why: intent crosses async commit/push steps, so the base stays tied to what was selected when the run started.
       baseRef: effectiveBaseRef ?? null
     })
@@ -3965,19 +3996,25 @@ function SourceControlInner(): React.JSX.Element {
         }
       }
 
-      const branchAhead = await refreshBranchCompareForCreatePrIntent(token)
-      if (abortIfStale()) {
-        return
-      }
       let eligibility = await readHostedReviewCreationEligibilityForIntent({
         token,
         hasUncommittedChanges: latestStatusEntries.length > 0,
         upstreamStatus: latestUpstreamStatus
       })
-      if (abortIfStale() || !eligibility) {
+      if (abortIfStale()) {
         return
       }
-      if (eligibility.canCreate) {
+      if (!eligibility) {
+        setCreatePrIntentNoticeForWorktree(token.worktreeId, {
+          tone: 'destructive',
+          message: translate(
+            'auto.components.right.sidebar.SourceControl.d7492cafce',
+            'Could not refresh Source Control. Retry Create PR.'
+          )
+        })
+        return
+      }
+      if (shouldAttemptCreateHostedReviewForIntent(eligibility)) {
         await createHostedReviewForCreatePrIntent(token, eligibility)
         if (abortIfStale()) {
           return
@@ -3989,6 +4026,13 @@ function SourceControlInner(): React.JSX.Element {
         return
       }
 
+      const branchAhead =
+        eligibility.blockedReason === 'no_upstream'
+          ? await refreshBranchCompareForCreatePrIntent(token)
+          : undefined
+      if (abortIfStale()) {
+        return
+      }
       const remoteStep = resolveCreatePrIntentRemoteStep({
         upstreamStatus: latestUpstreamStatus,
         hostedReviewCreation: eligibility,
@@ -4073,19 +4117,23 @@ function SourceControlInner(): React.JSX.Element {
       if (abortIfStale()) {
         return
       }
-      if (eligibility?.canCreate) {
+      if (eligibility && shouldAttemptCreateHostedReviewForIntent(eligibility)) {
         await createHostedReviewForCreatePrIntent(token, eligibility)
         if (abortIfStale()) {
           return
         }
         return
       }
+      // Why: prefer the blocked-reason notice (incl. unavailable lookup) over a generic stop.
+      const blockedNotice = resolveBlockedCreateReviewNoticeMessage(eligibility)
       setCreatePrIntentNoticeForWorktree(token.worktreeId, {
-        tone: 'muted',
-        message: translate(
-          'auto.components.right.sidebar.SourceControl.995c5e67ec',
-          'Review setup needs attention.'
-        )
+        tone: blockedNotice ? 'destructive' : 'muted',
+        message:
+          blockedNotice ??
+          translate(
+            'auto.components.right.sidebar.SourceControl.995c5e67ec',
+            'Review setup needs attention.'
+          )
       })
     } catch (error) {
       console.warn('[SourceControl] Create PR intent failed', error)
@@ -4132,6 +4180,7 @@ function SourceControlInner(): React.JSX.Element {
     readHostedReviewCreationEligibilityForIntent,
     refreshGitStatusForCreatePrIntent,
     refreshBranchCompareForCreatePrIntent,
+    provisionalHostedReviewProvider,
     remoteStatus,
     runRemoteAction,
     setCreatePrIntentNoticeForWorktree,

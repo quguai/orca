@@ -25,10 +25,17 @@ export type WorktreeCardLinearIssueDisplay = {
   labels?: string[]
 }
 
+export type WorktreeCardJiraIssueDisplay = {
+  identifier: string
+  title: string
+  url: string
+}
+
 export type WorktreeCardMetaBadgesProps = {
   issue: WorktreeCardIssueDisplay | null
   linearIssue: WorktreeCardLinearIssueDisplay | null
   localTaskId?: string | null
+  jiraIssue?: WorktreeCardJiraIssueDisplay | null
   review: WorktreeCardPrDisplay | null
   comment: string | null
   automationProvenance?: AutomationWorkspaceProvenance | null

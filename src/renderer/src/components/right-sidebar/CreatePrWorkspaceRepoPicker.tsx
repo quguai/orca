@@ -104,7 +104,10 @@ export function CreatePrWorkspaceRepoPicker({
             <ChevronDown className="size-3 shrink-0 text-muted-foreground" />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="max-h-80 min-w-56 overflow-y-auto">
+        <DropdownMenuContent
+          align="start"
+          className="scrollbar-sleek max-h-80 min-w-56 overflow-y-auto"
+        >
           <DropdownMenuLabel className="text-[11px] text-muted-foreground">
             {translate('auto.components.TaskPage.81f14d9924', 'Repository')}
           </DropdownMenuLabel>

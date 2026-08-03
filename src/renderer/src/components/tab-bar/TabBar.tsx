@@ -90,6 +90,7 @@ const NEW_TAB_MENU_TERMINAL_FOCUS_TIMEOUT_MS = 5000
 type GitStatusEntries = ReturnType<typeof useAppStore.getState>['gitStatusByWorktree'][string]
 const EMPTY_GIT_STATUS_ENTRIES: GitStatusEntries = []
 const EMPTY_AGENT_CMD_OVERRIDES: Partial<Record<TuiAgent, string>> = {}
+const EMPTY_DISABLED_TUI_AGENTS: TuiAgent[] = []
 const EMPTY_UNIFIED_TABS: readonly Tab[] = []
 
 function getProjectRuntimeShellMenuMode(
@@ -336,7 +337,9 @@ function TabBarInner({
       ),
     [agentCmdOverrides, defaultAgent, detectedIds]
   )
-  const disabledAgents = useAppStore((s) => s.settings?.disabledTuiAgents ?? [])
+  const disabledAgents = useAppStore(
+    (s) => s.settings?.disabledTuiAgents ?? EMPTY_DISABLED_TUI_AGENTS
+  )
   const inlineAgentButtons = useMemo(
     () =>
       buildTabAgentLaunchOptions(

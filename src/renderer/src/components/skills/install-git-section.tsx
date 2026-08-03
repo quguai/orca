@@ -112,7 +112,7 @@ export function GitSection(): React.JSX.Element {
             {previewResult.skills.length} skill
             {previewResult.skills.length !== 1 ? 's' : ''} found
           </p>
-          <div className="max-h-48 space-y-0.5 overflow-y-auto">
+          <div className="scrollbar-sleek max-h-48 space-y-0.5 overflow-y-auto">
             {previewResult.skills.map((skill) => (
               <button
                 type="button"

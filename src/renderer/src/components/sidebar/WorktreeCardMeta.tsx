@@ -1,9 +1,8 @@
 import React from 'react'
 import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card'
-import { CalendarClock, CircleDot, Pencil, StickyNote } from 'lucide-react'
+import { ExternalLink, Pencil, StickyNote } from 'lucide-react'
 import { toast } from 'sonner'
-import { cn } from '@/lib/utils'
-import { LinearIcon } from '@/components/icons/LinearIcon'
+import { JiraIcon } from '@/components/icons/JiraIcon'
 import { SelectedTextCopyMenu } from '@/components/SelectedTextCopyMenu'
 import CommentMarkdown from './CommentMarkdown'
 import { WORKTREE_NATIVE_CONTEXT_MENU_ATTR } from './WorktreeContextMenu'
@@ -11,11 +10,13 @@ import {
   WorktreeCardDetailSection,
   WorktreeCardDetailSectionContent
 } from './WorktreeCardDetailSection'
-import { DetailHeader, MetaIconBadge, MetadataActionIcon } from './WorktreeCardMetadataControls'
+import { DetailHeader, MetadataActionIcon } from './WorktreeCardMetadataControls'
+import { hasWorktreeCardDetails, WorktreeCardMetaBadges } from './WorktreeCardMetaBadges'
 import { useWorktreeCardDetailsHoverControl } from './worktree-card-details-hover-state'
-import { getReviewLabel, ReviewIcon } from './worktree-review-helpers'
+import { getReviewLabel } from './worktree-review-helpers'
 import type {
   WorktreeCardIssueDisplay,
+  WorktreeCardJiraIssueDisplay,
   WorktreeCardLinearIssueDisplay,
   WorktreeCardMetaBadgesProps,
   WorktreeCardMetaBadgesRootProps,
@@ -27,131 +28,29 @@ import { WorktreeCardAutomationDetailSection } from './WorktreeCardAutomationDet
 import { WorktreeCardCliDetailSection } from './WorktreeCardCliDetailSection'
 import { WorktreeCardIssueDetailSection } from './WorktreeCardIssueDetailSection'
 import { WorktreeCardHoverIdentityHeader } from './WorktreeCardHoverIdentityHeader'
-import {
-  WorktreeCardLocalTaskBadge,
-  WorktreeCardLocalTaskDetailSection
-} from './WorktreeCardLocalTaskDetailSection'
+import { WorktreeCardLocalTaskDetailSection } from './WorktreeCardLocalTaskDetailSection'
 import { WorktreeCardLinearIssueDetailSection } from './WorktreeCardLinearIssueDetailSection'
 
 export type {
   WorktreeCardIssueDisplay,
+  WorktreeCardJiraIssueDisplay,
   WorktreeCardLinearIssueDisplay,
   WorktreeCardMetaBadgesProps,
   WorktreeCardMetaBadgesRootProps,
   WorktreeCardDetailsHoverProps
 }
 
+export { hasWorktreeCardDetails, WorktreeCardMetaBadges }
+
 function hasComment(comment: string | null): boolean {
   return (comment ?? '').trim().length > 0
 }
-
-export function hasWorktreeCardDetails({
-  issue,
-  linearIssue,
-  localTaskId,
-  review,
-  comment,
-  automationProvenance
-}: WorktreeCardMetaBadgesProps): boolean {
-  return Boolean(
-    issue || linearIssue || localTaskId || review || hasComment(comment) || automationProvenance
-  )
-}
-
-export const WorktreeCardMetaBadges = React.forwardRef<
-  HTMLDivElement,
-  WorktreeCardMetaBadgesRootProps
->(function WorktreeCardMetaBadges(
-  { issue, linearIssue, localTaskId, review, comment, automationProvenance, className, ...props },
-  ref
-): React.JSX.Element | null {
-  if (
-    !hasWorktreeCardDetails({
-      issue,
-      linearIssue,
-      localTaskId,
-      review,
-      comment,
-      automationProvenance
-    })
-  ) {
-    return null
-  }
-
-  return (
-    // Why: Radix HoverCardTrigger uses `asChild`, so this group must forward
-    // trigger props/ref to the actual DOM node for attachment-only hover.
-    <div
-      ref={ref}
-      {...props}
-      className={cn('ml-auto flex shrink-0 items-center gap-1 pr-1.5', className)}
-      aria-label={translate(
-        'auto.components.sidebar.WorktreeCardMeta.3e65e11cc6',
-        'Workspace metadata'
-      )}
-    >
-      {hasComment(comment) && (
-        <MetaIconBadge
-          label={translate(
-            'auto.components.sidebar.WorktreeCardMeta.fe075cb851',
-            'Workspace notes'
-          )}
-        >
-          <StickyNote className="text-muted-foreground" />
-        </MetaIconBadge>
-      )}
-      {automationProvenance && (
-        <MetaIconBadge
-          label={translate(
-            'auto.components.sidebar.WorktreeCardMeta.automationCreated',
-            'Created by automation'
-          )}
-        >
-          <CalendarClock className="text-muted-foreground" />
-        </MetaIconBadge>
-      )}
-      {localTaskId && <WorktreeCardLocalTaskBadge taskId={localTaskId} />}
-      {issue && (
-        <MetaIconBadge
-          label={translate(
-            'auto.components.sidebar.WorktreeCardMeta.3f2649eeb8',
-            'Linked issue #{{value0}}',
-            { value0: issue.number }
-          )}
-        >
-          <CircleDot className="text-muted-foreground" />
-        </MetaIconBadge>
-      )}
-      {linearIssue && (
-        <MetaIconBadge
-          label={translate(
-            'auto.components.sidebar.WorktreeCardMeta.b105fd3057',
-            'Linked Linear {{value0}}',
-            { value0: linearIssue.identifier }
-          )}
-        >
-          <LinearIcon className="text-muted-foreground" />
-        </MetaIconBadge>
-      )}
-      {review && (
-        <MetaIconBadge
-          label={translate(
-            'auto.components.sidebar.WorktreeCardMeta.3ea2702e62',
-            'Linked {{value0}} #{{value1}}',
-            { value0: getReviewLabel(review), value1: review.number }
-          )}
-        >
-          <ReviewIcon review={review} />
-        </MetaIconBadge>
-      )}
-    </div>
-  )
-})
 
 export function WorktreeCardDetailsHover({
   issue,
   linearIssue,
   localTaskId,
+  jiraIssue,
   review,
   comment,
   automationProvenance,
@@ -264,9 +163,11 @@ export function WorktreeCardDetailsHover({
       issue,
       linearIssue,
       localTaskId,
+      jiraIssue,
       review,
       comment,
-      automationProvenance
+      automationProvenance,
+      cliProvenance
     }) &&
     !detailsAfter
   ) {
@@ -322,6 +223,35 @@ export function WorktreeCardDetailsHover({
                 onOpenLinearIssueInOrca ? dismissAndRun(onOpenLinearIssueInOrca) : undefined
               }
             />
+          )}
+
+          {jiraIssue && (
+            <WorktreeCardDetailSection>
+              <DetailHeader
+                icon={<JiraIcon className="size-3 text-muted-foreground" />}
+                label={translate(
+                  'auto.components.sidebar.WorktreeCardMeta.jiraIssue',
+                  'Jira {{value0}}',
+                  { value0: jiraIssue.identifier }
+                )}
+                actions={
+                  <MetadataActionIcon
+                    label={translate(
+                      'auto.components.sidebar.WorktreeCardMeta.viewOnJira',
+                      'View on Jira'
+                    )}
+                    href={jiraIssue.url}
+                  >
+                    <ExternalLink className="size-3" />
+                  </MetadataActionIcon>
+                }
+              />
+              <WorktreeCardDetailSectionContent>
+                <div className="text-[13px] font-semibold leading-snug text-foreground break-words">
+                  {jiraIssue.title}
+                </div>
+              </WorktreeCardDetailSectionContent>
+            </WorktreeCardDetailSection>
           )}
 
           <WorktreeCardReviewDetailSection

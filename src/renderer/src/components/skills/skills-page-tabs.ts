@@ -9,15 +9,11 @@ export const skillsPageTabs = [
   { id: 'my-skills', icon: Library },
   { id: 'install', icon: Download },
   { id: 'workspaces', icon: FolderOpen }
-] satisfies Array<{
+] satisfies {
   id: SkillsPageTab
   icon: React.ComponentType<{ className?: string }>
-}>
+}[]
 
-export const skillsInstallTabs = [
-  { id: 'market' },
-  { id: 'local' },
-  { id: 'git' }
-] satisfies Array<{
+export const skillsInstallTabs = [{ id: 'market' }, { id: 'local' }, { id: 'git' }] satisfies {
   id: SkillsInstallTab
-}>
+}[]

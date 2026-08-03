@@ -9,6 +9,8 @@ type LinkedWorkItemMetadata = Pick<
   | 'linkedGiteaPR'
   | 'linkedCodeMR'
   | 'linkedLocalTask'
+  | 'linkedWorkItem'
+  | 'linkedTaskSourceContext'
 >
 
 export function getLinkedWorkItemMetadata(meta: WorktreeMeta | undefined): LinkedWorkItemMetadata {
@@ -19,6 +21,8 @@ export function getLinkedWorkItemMetadata(meta: WorktreeMeta | undefined): Linke
     linkedAzureDevOpsPR: meta?.linkedAzureDevOpsPR ?? null,
     linkedGiteaPR: meta?.linkedGiteaPR ?? null,
     linkedCodeMR: meta?.linkedCodeMR ?? null,
-    linkedLocalTask: meta?.linkedLocalTask ?? null
+    linkedLocalTask: meta?.linkedLocalTask ?? null,
+    linkedWorkItem: meta?.linkedWorkItem ?? null,
+    linkedTaskSourceContext: meta?.linkedTaskSourceContext ?? null
   }
 }

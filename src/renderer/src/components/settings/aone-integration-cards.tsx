@@ -10,7 +10,7 @@ import { Briefcase, GitPullRequestArrow } from 'lucide-react'
 import { IntegrationCardDetails, IntegrationCardShell } from './integration-card-shell'
 import { translate } from '@/i18n/i18n'
 
-type AoneStatus =
+export type AoneStatus =
   | { kind: 'checking' }
   | { kind: 'missing' }
   | { kind: 'unauthenticated' }
@@ -31,7 +31,7 @@ function describeLink(link: unknown): { project?: string | null; repoPath?: stri
   }
 }
 
-function useAoneStatus(): { status: AoneStatus; refresh: () => void } {
+export function useAoneStatus(): { status: AoneStatus; refresh: () => void } {
   const [status, setStatus] = useState<AoneStatus>({ kind: 'checking' })
   const [tick, setTick] = useState(0)
 
