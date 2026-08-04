@@ -1,4 +1,5 @@
 import React from 'react'
+import { MessageCircleQuestion } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getWorktreeStatusLabel, type WorktreeStatus } from '@/lib/worktree-status'
 import { WorkingActivityIndicator } from '@/components/WorkingActivityIndicator'
@@ -38,6 +39,18 @@ const StatusIndicator = React.memo(function StatusIndicator({
         title={resolvedTitle}
         {...rest}
       />
+    )
+  }
+
+  if (status === 'permission') {
+    return (
+      <span
+        className={cn('inline-flex h-3 w-3 shrink-0 items-center justify-center', className)}
+        title={resolvedTitle}
+        {...rest}
+      >
+        <MessageCircleQuestion className="size-3 text-amber-500" aria-hidden="true" />
+      </span>
     )
   }
 
