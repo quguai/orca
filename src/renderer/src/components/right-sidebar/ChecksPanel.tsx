@@ -59,6 +59,7 @@ import {
 import { ENTRY_REFRESH_GRACE_MS, shouldEntryRefresh } from './checks-entry-refresh'
 import type {
   GitLabDiscussionResolveResult,
+  GitLabProjectRef,
   GitLabWorkItemDetails,
   PRInfo,
   PRCheckDetail,
@@ -161,6 +162,7 @@ import {
 import { installWindowVisibilityInterval } from '@/lib/window-visibility-interval'
 import { useMountedRef } from '@/hooks/useMountedRef'
 import { callRuntimeRpc, getActiveRuntimeTarget } from '@/runtime/runtime-rpc-client'
+import { loadGitLabJobLogDetails } from '@/runtime/gitlab-job-trace-client'
 import { gitLabPipelineJobsToPRChecks } from '../../../../shared/gitlab-pipeline-checks'
 import { getWorktreeGitIdentityDisplay } from '@/lib/worktree-git-identity-display'
 import { SourceControlAgentActionDialog } from './SourceControlAgentActionDialog'
@@ -384,6 +386,10 @@ function isMergeRequestChecksPanelReview(review: ChecksPanelReview): boolean {
   return review.provider === 'gitlab' || review.provider === 'code'
 }
 
+function hasGitHubCheckHandle(check: PRCheckDetail): boolean {
+  return Boolean(check.checkRunId || check.workflowRunId || check.url)
+}
+
 function gitLabMRCommentsToPRComments(
   comments: GitLabWorkItemDetails['comments'] | undefined
 ): PRComment[] {
@@ -579,6 +585,9 @@ export default function ChecksPanel(): React.JSX.Element {
   const mountedRef = useMountedRef()
   const confirm = useConfirmationDialog()
   const prevChecksRef = useRef<string>('')
+  // Why: a fork MR's pipeline lives in the source project, so job traces must be
+  // fetched against the MR's own project rather than this repo's default remote.
+  const gitLabProjectRefRef = useRef<GitLabProjectRef | null>(null)
   const conflictSummaryRefreshKeyRef = useRef<string | null>(null)
   const panelVisibleSinceRef = useRef<number | null>(null)
   const foregroundedUnrenderedReviewKeyRef = useRef<string | null>(null)
@@ -1958,6 +1967,7 @@ export default function ChecksPanel(): React.JSX.Element {
         if (!isCurrentAsyncResult(requestKey)) {
           return
         }
+        gitLabProjectRefRef.current = details?.item.projectRef ?? null
         const result = gitLabPipelineJobsToPRChecks(details?.pipelineJobs ?? [])
         setChecks(result)
         setComments(gitLabMRCommentsToPRComments(details?.comments))
@@ -2137,6 +2147,17 @@ export default function ChecksPanel(): React.JSX.Element {
       if (!repo) {
         return Promise.resolve(null)
       }
+      if (check.gitlabJobId) {
+        // Why: `settings` (not ownerSettings) is what fetched the job list, so the
+        // job id and its trace always resolve against the same host.
+        return loadGitLabJobLogDetails({
+          repoPath: repo.path,
+          repoId: repo.id,
+          settings,
+          check,
+          projectRef: gitLabProjectRefRef.current
+        })
+      }
       return fetchPRCheckDetails(
         repo.path,
         {
@@ -2149,8 +2170,11 @@ export default function ChecksPanel(): React.JSX.Element {
         { repoId: repo.id }
       )
     },
-    [fetchPRCheckDetails, pr?.prRepo, repo]
+    [fetchPRCheckDetails, pr?.prRepo, repo, settings]
   )
+
+  // Why: read at call time — the ref is filled by an async MR fetch, so a value prop would be stale.
+  const getGitLabProjectRef = useCallback(() => gitLabProjectRefRef.current, [])
 
   useEffect(() => {
     if (activeGitLabReview || activeCodeReview) {
@@ -3557,33 +3581,45 @@ export default function ChecksPanel(): React.JSX.Element {
     setIsFixingChecksWithAI(true)
     try {
       const checkRunDetailsByCheckKey: Record<string, PRCheckRunDetails> = {}
-      if (activeReview.provider !== 'gitlab' && repo) {
-        await Promise.all(
-          broken.slice(0, 5).map(async (check, index) => {
-            if (!check.checkRunId && !check.workflowRunId && !check.url) {
-              return
+      await Promise.all(
+        broken.slice(0, 5).map(async (check, index) => {
+          const isGitLabJob = Boolean(check.gitlabJobId)
+          if (
+            !isGitLabJob &&
+            (activeReview.provider === 'gitlab' || !hasGitHubCheckHandle(check))
+          ) {
+            return
+          }
+          try {
+            // Why: GitLab job logs are now loadable, so the fix prompt gets the same
+            // failure context the sidebar shows instead of check names alone.
+            const details = isGitLabJob
+              ? await loadGitLabJobLogDetails({
+                  repoPath: repo.path,
+                  repoId: repo.id,
+                  settings,
+                  check,
+                  projectRef: gitLabProjectRefRef.current
+                })
+              : await fetchPRCheckDetails(
+                  repo.path,
+                  {
+                    checkRunId: check.checkRunId,
+                    workflowRunId: check.workflowRunId,
+                    checkName: check.name,
+                    url: check.url,
+                    prRepo: pr?.prRepo ?? null
+                  },
+                  { repoId: repo.id }
+                )
+            if (details) {
+              checkRunDetailsByCheckKey[getCheckDetailsPromptKey(check, index)] = details
             }
-            try {
-              const details = await fetchPRCheckDetails(
-                repo.path,
-                {
-                  checkRunId: check.checkRunId,
-                  workflowRunId: check.workflowRunId,
-                  checkName: check.name,
-                  url: check.url,
-                  prRepo: pr?.prRepo ?? null
-                },
-                { repoId: repo.id }
-              )
-              if (details) {
-                checkRunDetailsByCheckKey[getCheckDetailsPromptKey(check, index)] = details
-              }
-            } catch (error) {
-              console.warn('[ChecksPanel] failed to load check details for AI fix prompt', error)
-            }
-          })
-        )
-      }
+          } catch (error) {
+            console.warn('[ChecksPanel] failed to load check details for AI fix prompt', error)
+          }
+        })
+      )
       if (!isCurrentAsyncResult(requestKey)) {
         return
       }
@@ -3622,6 +3658,7 @@ export default function ChecksPanel(): React.JSX.Element {
     isFixingChecksWithAI,
     pr?.prRepo,
     repo,
+    settings,
     sourceControlAiActionsVisible,
     stateRequestKey
   ])
@@ -3805,6 +3842,9 @@ export default function ChecksPanel(): React.JSX.Element {
     }
     openModal('edit-meta', {
       worktreeId: activeWorktreeId,
+      // Why: the same workspace ID can exist under two hosts. Naming the owner
+      // keeps the dialog on this workspace instead of the ambiguous lookup.
+      repoId: activeWorktree.repoId,
       currentDisplayName: activeWorktree.displayName,
       currentIssue: activeWorktree.linkedIssue,
       currentPR: activeWorktree.linkedPR ?? activeReview.number,
@@ -4631,6 +4671,7 @@ export default function ChecksPanel(): React.JSX.Element {
           checksLoading={checksLoading}
           checkDetailsContextKey={stateRequestKey}
           onLoadCheckDetails={handleLoadCheckDetails}
+          getGitLabProjectRef={getGitLabProjectRef}
         />
       )}
       <PRCommentsList

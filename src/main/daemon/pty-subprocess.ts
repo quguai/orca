@@ -71,6 +71,7 @@ import {
   expandWindowsPathEnvironmentVariables
 } from '../../shared/windows-environment-expansion'
 import { forceKillPosixPtyProcessGroups } from '../pty/posix-pty-process-groups'
+import { readPtySlavePath } from '../../shared/pty-slave-line-discipline-echo'
 
 const PANE_IDENTITY_ENV_KEYS = [
   'ORCA_PANE_KEY',
@@ -125,6 +126,7 @@ export type PtySubprocessOptions = {
   shellOverride?: string
   terminalWindowsWslDistro?: string | null
   terminalWindowsPowerShellImplementation?: 'auto' | 'powershell.exe' | 'pwsh.exe'
+  onMacosTccSpawnStrategy?: (strategy: 'wrapped' | 'direct') => void
 }
 
 function deleteRequestedDaemonEnvKeys(
@@ -542,6 +544,7 @@ function spawnDaemonPtyWithWindowsFallback(args: {
   cols: number
   rows: number
   windowsFallbackAttempts: WindowsShellSpawnAttempt[]
+  onMacosTccSpawnStrategy?: PtySubprocessOptions['onMacosTccSpawnStrategy']
 }): {
   process: pty.IPty
   shellPath: string
@@ -550,7 +553,7 @@ function spawnDaemonPtyWithWindowsFallback(args: {
 } {
   const spawnAt = (shellPath: string, shellArgs: string[], cwd: string): pty.IPty => {
     const wrapped = wrapShellSpawnForMacosTccAttribution(shellPath, shellArgs, args.env)
-    return pty.spawn(wrapped.file, wrapped.args, {
+    const proc = pty.spawn(wrapped.file, wrapped.args, {
       name: args.env.TERM ?? 'xterm-256color',
       cols: args.cols,
       rows: args.rows,
@@ -559,6 +562,8 @@ function spawnDaemonPtyWithWindowsFallback(args: {
       // Why: legacy system ConPTY can corrupt full-width TUI rows in scrollback; bundled ConPTY has the wrap-marker behavior xterm expects.
       ...(process.platform === 'win32' ? { useConptyDll: true } : {})
     })
+    args.onMacosTccSpawnStrategy?.(wrapped.file === shellPath ? 'direct' : 'wrapped')
+    return proc
   }
 
   try {
@@ -836,7 +841,8 @@ export function createPtySubprocess(opts: PtySubprocessOptions): SubprocessHandl
       env,
       cols: size.cols,
       rows: size.rows,
-      windowsFallbackAttempts
+      windowsFallbackAttempts,
+      onMacosTccSpawnStrategy: opts.onMacosTccSpawnStrategy
     })
     proc = spawned.process
     // Why: a Windows fallback (e.g. cmd.exe) carries its own argv-embedded startup command; adopt the winning shell's identity + delivery flag.
@@ -1039,9 +1045,11 @@ export function createPtySubprocess(opts: PtySubprocessOptions): SubprocessHandl
     }
   })
 
+  const slavePath = readPtySlavePath(proc)
   return {
     pid: proc.pid,
     shellPath,
+    ...(slavePath ? { slavePath } : {}),
     ...(startupCommandDeliveredInShellArgs ? { startupCommandDeliveredInShellArgs: true } : {}),
     getForegroundProcess: () => {
       // Why: node-pty's `.process` reports the live foreground name but reads a recycled pid on a reaped pty, so bail when dead.

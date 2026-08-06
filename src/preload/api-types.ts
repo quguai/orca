@@ -30,8 +30,10 @@ import type { ReadClipboardTextOptions } from '../shared/clipboard-text'
 import type { AppIdentity } from '../shared/app-identity'
 import type { ReleaseChannel } from '../shared/release-channel'
 import type {
+  HostQualifiedKnownWorktreeResult,
   HostQualifiedDetectedWorktreeResult,
   LegacyDetectedWorktreeRequest,
+  ListKnownWorktreesForExecutionHostArgs,
   ListDetectedWorktreesArgs,
   ProviderRequestId
 } from '../shared/detected-worktree-provider-contract'
@@ -49,6 +51,7 @@ import type {
 } from '../shared/terminal-render-desync-evidence'
 import type { MobileRelayStatus } from '../shared/mobile-relay-status'
 import type { MobilePairingConnectionMode } from '../shared/mobile-pairing-connection-mode'
+import type { RuntimePairingReach } from '../shared/runtime-pairing-reach'
 import type { MobileRelayMintFailure } from '../shared/mobile-relay-mint-failure'
 import type { VerifyAndAddRuntimeEnvironmentResult } from '../shared/remote-pairing-verification'
 import type {
@@ -123,6 +126,7 @@ import type {
   BrowserCertificateProceedResult,
   BrowserLoadError,
   BrowserSessionProfile,
+  BrowserSessionProfileCreateOptions,
   BrowserSessionProfileScope,
   BrowserSessionProfileSource,
   BrowserViewportOverride,
@@ -328,7 +332,10 @@ import type {
   UpdatePullRequestBySlugArgs,
   UpdateProjectItemFieldArgs
 } from '../shared/github-project-types'
-import type { RichMarkdownContextMenuCommandPayload } from '../shared/rich-markdown-context-menu'
+import type {
+  RichMarkdownContextMenuCommandPayload,
+  RichMarkdownContextMenuTableTarget
+} from '../shared/rich-markdown-context-menu'
 import type {
   BrowserSetGrabModeArgs,
   BrowserSetGrabModeResult,
@@ -626,10 +633,12 @@ export type BrowserApi = {
     callback: (args: { browserPageId: string; key: 'c' | 's' }) => void
   ) => () => void
   sessionListProfiles: () => Promise<BrowserSessionProfile[]>
-  sessionCreateProfile: (args: {
-    scope: BrowserSessionProfileScope
-    label: string
-  }) => Promise<BrowserSessionProfile | null>
+  sessionCreateProfile: (
+    args: {
+      scope: BrowserSessionProfileScope
+      label: string
+    } & BrowserSessionProfileCreateOptions
+  ) => Promise<BrowserSessionProfile | null>
   sessionDeleteProfile: (args: { profileId: string }) => Promise<boolean>
   sessionImportCookies: (args: { profileId: string }) => Promise<BrowserCookieImportResult>
   sessionResolvePartition: (args: { profileId: string | null }) => Promise<string | null>
@@ -1402,6 +1411,9 @@ export type PreloadApi = {
       ): Promise<HostQualifiedDetectedWorktreeResult | DetectedWorktreeListResult>
       (args: LegacyDetectedWorktreeRequest): Promise<DetectedWorktreeListResult>
     }
+    listKnownForExecutionHost?: (
+      args: ListKnownWorktreesForExecutionHostArgs
+    ) => Promise<HostQualifiedKnownWorktreeResult>
     cancelListDetected?: (args: { providerRequestId: ProviderRequestId }) => Promise<void>
     listAll: () => Promise<Worktree[]>
     create: (args: CreateWorktreeArgs) => Promise<CreateWorktreeResult>
@@ -2139,6 +2151,8 @@ export type PreloadApi = {
       args: GitLabRepoSelectorArgs & {
         jobId: number
         projectRef?: GitLabProjectRef | null
+        /** Bound the trace in main to a readable excerpt (see gitLabJobTraceToLogExcerpt). */
+        logExcerpt?: boolean
       }
     ) => Promise<GitLabJobTraceResult>
     retryJob: (
@@ -3036,9 +3050,19 @@ export type PreloadApi = {
       includeIgnored?: boolean
       bypassEffectiveUpstreamNegativeCache?: boolean
       reuseLineStats?: boolean
+      /** Merge-base OID to measure the branch line total against; omit to skip the work. */
+      branchLineTotalMergeBase?: string
       requestToken?: string
     }) => Promise<GitStatusResult>
     cancelStatus: (args: { requestToken: string }) => Promise<void>
+    setStatusUpstreamRefWatch: (args: {
+      worktreeId: string
+      worktreePath: string
+      executionHostId: string
+      connectionId?: string
+      branch?: string
+      upstreamName?: string
+    }) => Promise<void>
     submoduleStatus: (args: {
       worktreePath: string
       submodulePath: string
@@ -3163,6 +3187,7 @@ export type PreloadApi = {
           capability: CommitMessageAgentCapability
           models: CommitMessageModelCapability[]
           defaultModelId: string
+          catalogOrigin: 'probe' | 'spec'
         }
       | { success: false; error: string }
     >
@@ -3441,6 +3466,7 @@ export type PreloadApi = {
     setZoomLevel: (level: number) => void
     syncTrafficLights: (zoomFactor: number) => void
     setMarkdownEditorFocused: (focused: boolean) => void
+    setRichMarkdownContextMenuTarget: (target: RichMarkdownContextMenuTableTarget | null) => void
     setTerminalInputFocused: (focused: boolean) => void
     setFloatingFocus: (state: { panelFocused: boolean; terminalFocused: boolean }) => void
     setShortcutRecorderFocused: (focused: boolean) => void
@@ -3795,7 +3821,11 @@ export type PreloadApi = {
       { ok: true } | { ok: false; reason: 'cancelled' | 'failed' | 'unsupported' }
     >
     openWindowsNetworkSettings: () => Promise<boolean>
-    getRuntimePairingUrl: (args?: { address?: string; rotate?: boolean }) => Promise<
+    getRuntimePairingUrl: (args?: {
+      address?: string
+      rotate?: boolean
+      reach?: RuntimePairingReach
+    }) => Promise<
       | { available: false; reason?: 'network_exposure_failed'; guidance?: string }
       | {
           available: true

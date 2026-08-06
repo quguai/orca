@@ -22,6 +22,7 @@ import type {
 } from '../shared/agent-session-resume'
 import type { MobileRelayStatus } from '../shared/mobile-relay-status'
 import type { MobilePairingConnectionMode } from '../shared/mobile-pairing-connection-mode'
+import type { RuntimePairingReach } from '../shared/runtime-pairing-reach'
 import type { MobileRelayMintFailure } from '../shared/mobile-relay-mint-failure'
 import type { VerifyAndAddRuntimeEnvironmentResult } from '../shared/remote-pairing-verification'
 import type {
@@ -194,7 +195,9 @@ import type {
 } from '../shared/github-project-types'
 import {
   richMarkdownContextMenuCommandChannel,
-  type RichMarkdownContextMenuCommandPayload
+  richMarkdownContextMenuTargetChannel,
+  type RichMarkdownContextMenuCommandPayload,
+  type RichMarkdownContextMenuTableTarget
 } from '../shared/rich-markdown-context-menu'
 import type {
   AgentStatusClearIpcPayload,
@@ -251,11 +254,7 @@ import type {
 } from '../shared/ai-vault-types'
 import type { AiVaultPrepareSessionResumeArgs } from '../shared/ai-vault-resume-preparation'
 import type { AgentType } from '../shared/native-chat-types'
-import {
-  ORCA_APP_RESTART_ABORTED_EVENT,
-  ORCA_APP_RESTART_STARTED_EVENT,
-  ORCA_UPDATER_QUIT_AND_INSTALL_ABORTED_EVENT
-} from '../shared/updater-renderer-events'
+import { ORCA_UPDATER_QUIT_AND_INSTALL_ABORTED_EVENT } from '../shared/updater-renderer-events'
 import {
   ORCA_INTERNAL_FILE_DRAG_TYPE,
   createNativeFileDropPayload,
@@ -291,11 +290,9 @@ import type {
 } from '../shared/crash-reporting'
 import type { RendererHeapStatistics } from '../shared/renderer-heap-statistics'
 import { readRendererHeapStatistics } from './renderer-heap-statistics-reader'
+import { createUpdaterQuitAbortRelay } from '../shared/renderer-restart-preparation'
 import {
-  createUpdaterQuitAbortRelay,
-  prepareRendererForAppRestart
-} from '../shared/renderer-restart-preparation'
-import {
+  prepareAndInvokeAppRestart,
   prepareAndInvokeUpdaterInstall,
   registerRendererRestartIpcRelays
 } from './renderer-restart-wiring'
@@ -496,21 +493,24 @@ const api = {
     getIdentity: (): Promise<AppIdentity> => ipcRenderer.invoke('app:getIdentity'),
     getFeatureWallAssetBaseUrl: (): Promise<string> =>
       ipcRenderer.invoke('app:getFeatureWallAssetBaseUrl'),
-    relaunch: (): Promise<void> => ipcRenderer.invoke('app:relaunch'),
-    restart: async (): Promise<void> => {
-      await prepareRendererForAppRestart(window, {
-        startedEventName: ORCA_APP_RESTART_STARTED_EVENT,
-        abortedEventName: ORCA_APP_RESTART_ABORTED_EVENT,
-        awaitCheckpoint: awaitBeforeUnloadCheckpoint
-      })
-      try {
-        return await ipcRenderer.invoke('app:restart')
-      } catch (error) {
-        window.dispatchEvent(new Event(ORCA_APP_RESTART_ABORTED_EVENT))
-        throw error
-      }
-    },
-    reload: (): Promise<void> => ipcRenderer.invoke('app:reload'),
+    relaunch: (): Promise<void> =>
+      prepareAndInvokeAppRestart(
+        window,
+        () => ipcRenderer.invoke('app:relaunch'),
+        awaitBeforeUnloadCheckpoint
+      ),
+    restart: (): Promise<void> =>
+      prepareAndInvokeAppRestart(
+        window,
+        () => ipcRenderer.invoke('app:restart'),
+        awaitBeforeUnloadCheckpoint
+      ),
+    reload: (): Promise<void> =>
+      prepareAndInvokeAppRestart(
+        window,
+        () => ipcRenderer.invoke('app:reload'),
+        awaitBeforeUnloadCheckpoint
+      ),
     stageBeforeUnloadSync: (args: Parameters<PreloadApi['app']['stageBeforeUnloadSync']>[0]) => {
       const result = ipcRenderer.sendSync('app:stage-before-unload-sync', args) as {
         ok?: unknown
@@ -775,6 +775,9 @@ const api = {
     list: (args) => ipcRenderer.invoke('worktrees:list', args),
 
     listDetected: (args) => ipcRenderer.invoke('worktrees:listDetected', args),
+
+    listKnownForExecutionHost: (args) =>
+      ipcRenderer.invoke('worktrees:listKnownForExecutionHost', args),
 
     cancelListDetected: (args) => ipcRenderer.invoke('worktrees:cancelListDetected', args),
 
@@ -2952,6 +2955,7 @@ const api = {
     sessionCreateProfile: (args: {
       scope: 'default' | 'isolated' | 'imported'
       label: string
+      userAgentMode?: 'clean' | 'native'
     }): Promise<unknown> => ipcRenderer.invoke('browser:session:createProfile', args),
 
     sessionDeleteProfile: (args: { profileId: string }): Promise<boolean> =>
@@ -3436,10 +3440,19 @@ const api = {
       includeIgnored?: boolean
       bypassEffectiveUpstreamNegativeCache?: boolean
       reuseLineStats?: boolean
+      branchLineTotalMergeBase?: string
       requestToken?: string
     }): Promise<unknown> => ipcRenderer.invoke('git:status', args),
     cancelStatus: (args: { requestToken: string }): Promise<void> =>
       ipcRenderer.invoke('git:cancelStatus', args),
+    setStatusUpstreamRefWatch: (args: {
+      worktreeId: string
+      worktreePath: string
+      executionHostId: string
+      connectionId?: string
+      branch?: string
+      upstreamName?: string
+    }): Promise<void> => ipcRenderer.invoke('git:setStatusUpstreamRefWatch', args),
     submoduleStatus: (args: {
       worktreePath: string
       submodulePath: string
@@ -4237,6 +4250,9 @@ const api = {
     setMarkdownEditorFocused: (focused: boolean): void => {
       ipcRenderer.send('ui:setMarkdownEditorFocused', focused)
     },
+    setRichMarkdownContextMenuTarget: (target: RichMarkdownContextMenuTableTarget | null): void => {
+      ipcRenderer.send(richMarkdownContextMenuTargetChannel, target)
+    },
     setTerminalInputFocused: (focused: boolean): void => {
       ipcRenderer.send('ui:setTerminalInputFocused', focused)
     },
@@ -4861,6 +4877,9 @@ const api = {
     getRuntimePairingUrl: (args?: {
       address?: string
       rotate?: boolean
+      // Why: the widen is one-way and host-wide, so main must gate it on the reach the user picked, not
+      // on how the typed address happens to look (a Custom loopback may front an SSH tunnel).
+      reach?: RuntimePairingReach
     }): Promise<
       | { available: false; reason?: 'network_exposure_failed'; guidance?: string }
       | {
