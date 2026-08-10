@@ -104,7 +104,7 @@ export function useAutomationDispatchEvents(): void {
           return ownership?.finalize() ?? false
         }
 
-        if (!repo) {
+        if (!repo && !isGlobalScoped) {
           await markDispatchResult({
             runId: run.id,
             status: 'skipped_unavailable',
@@ -131,8 +131,10 @@ export function useAutomationDispatchEvents(): void {
                   ? toSshExecutionHostId(folderWorkspaceConnectionId)
                   : getResolvedExecutionHostIdForWorktree(state, automationWorktree.id)
               : null
-          const runHostId =
-            parseExecutionHostId(automation.runContext?.hostId)?.id ?? getRepoExecutionHostId(repo)
+          const runHostId = isGlobalScoped
+            ? 'local'
+            : (parseExecutionHostId(automation.runContext?.hostId)?.id ??
+              getRepoExecutionHostId(repo!))
           const workspaceMatchesRunTarget =
             automationWorkspaceScope?.type === 'folder'
               ? folderWorkspaceHostId !== null && folderWorkspaceHostId === runHostId
@@ -156,10 +158,11 @@ export function useAutomationDispatchEvents(): void {
             })
             return
           }
-          const sshTargetId =
-            automationWorkspaceScope?.type === 'folder'
+          const sshTargetId = isGlobalScoped
+            ? null
+            : automationWorkspaceScope?.type === 'folder'
               ? (folderWorkspaceConnectionId ?? null)
-              : (repo.connectionId ?? null)
+              : (repo?.connectionId ?? null)
           if (!isGlobalScoped && sshTargetId) {
             const needsPrompt = await window.api.ssh.needsPassphrasePrompt({
               targetId: sshTargetId

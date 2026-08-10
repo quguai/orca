@@ -1,4 +1,5 @@
 /* eslint-disable max-lines -- main-process entry point; owns app lifecycle, service wiring, window creation, and hook/daemon startup with no cleaner split seam. */
+import { randomBytes } from 'node:crypto'
 import { existsSync, statSync } from 'node:fs'
 import { isAbsolute, join } from 'node:path'
 import os from 'node:os'
@@ -107,6 +108,8 @@ import {
 } from './updater'
 import { configureRemoteServerUpdater } from './runtime/remote-server-updater'
 import type { UpdateCheckOptions } from '../shared/types'
+import { FLOATING_TERMINAL_WORKTREE_ID } from '../shared/constants'
+import { isGlobalScopedAutomation } from '../shared/automation-scope'
 import { recordUpdaterLifecycle } from './updater-lifecycle-diagnostics'
 import {
   installServeSupervisorDisconnectQuit,
@@ -2522,6 +2525,7 @@ void app.whenReady().then(async () => {
           let terminalPtyId: string | null = null
           let workspaceId: string
           let workspaceDisplayName: string | null = null
+          const isGlobalScoped = isGlobalScopedAutomation(automation)
           const dispatchPrompt =
             automation.kind === 'weekly_report'
               ? await buildHeadlessWeeklyReportPrompt({
@@ -2531,7 +2535,31 @@ void app.whenReady().then(async () => {
                 })
               : automation.prompt
 
-          if (automation.workspaceMode === 'new_per_run') {
+          if (isGlobalScoped) {
+            const created = await runtimeService.createAgentSession(
+              {
+                clientOperationId: `${Date.now()}-${randomBytes(16).toString('hex')}`,
+                worktree: `id:${FLOATING_TERMINAL_WORKTREE_ID}`,
+                agent: automation.agentId,
+                prompt: dispatchPrompt,
+                presentation: 'background'
+              },
+              {
+                clientId: `automation:${run.id}`,
+                clientKind: 'runtime'
+              }
+            )
+            const terminal = created.terminal
+            terminalHandle = terminal.handle
+            terminalSessionId = terminal.tabId ?? null
+            terminalPaneKey = terminal.paneKey ?? null
+            terminalPtyId = terminal.ptyId ?? null
+            workspaceId = FLOATING_TERMINAL_WORKTREE_ID
+            workspaceDisplayName = 'Floating Workspace'
+          } else if (automation.workspaceMode === 'new_per_run') {
+            if (!target.repo) {
+              throw new Error('The target project is no longer available.')
+            }
             const created = await runtimeService.createManagedWorktree({
               ...buildHeadlessAutomationWorktreeCreateArgs({
                 automation,

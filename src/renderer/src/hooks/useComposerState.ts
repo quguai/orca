@@ -4298,18 +4298,6 @@ export function useComposerState(options: UseComposerStateOptions): UseComposerS
           ...issueCommandInput,
           trustDecision: issueCommandTrustDecision
         })
-        const linkedLinearIssue =
-          submitLinkedWorkItem && submitLinkedWorkItemProvider === 'linear'
-            ? submitLinkedWorkItem.linearIdentifier
-            : undefined
-        const linkedLinearIssueWorkspaceId =
-          submitLinkedWorkItem && submitLinkedWorkItemProvider === 'linear'
-            ? submitLinkedWorkItem.linearWorkspaceId
-            : undefined
-        const linkedLinearIssueOrganizationUrlKey =
-          submitLinkedWorkItem && submitLinkedWorkItemProvider === 'linear'
-            ? submitLinkedWorkItem.linearOrganizationUrlKey
-            : undefined
         const effectiveBranchNameOverride = resolveComposerBranchNameOverrideForCreate({
           branchNameOverride: submitBranchNameOverride,
           branchAutoName: branchAutoNameRef.current,

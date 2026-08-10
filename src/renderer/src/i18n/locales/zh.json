@@ -812,7 +812,7 @@
         "devSearchKeywordNotification": "notification",
         "projectHostsSummary": "{{value0}} 个主机",
         "linearTitle": "Linear",
-        "linearDescription": "Linear 在 Orca 中的工作方式、设置清单、智能体技能和提示词示例。",
+        "linearDescription": "Give agents the skill to read and update your linked Linear tickets.",
         "pluginsTitle": "插件",
         "pluginsDescription": "安装和管理实验性 Orca 插件。",
         "tasksDescription": "连接提供商、安装 Linear 技能并选择要在任务中显示的内容。"
@@ -824,8 +824,8 @@
         "pasteTooLarge": "粘贴内容过大。"
       },
       "useMacosTccPromptNotice": {
-        "title": "看到“Orca 想要访问…”提示？",
-        "description": "当 Orca 中运行的代理或终端工具尝试访问受保护的文件时，macOS 可能会显示权限信息。请在“设置”中授予“完全磁盘访问权限”，以减少此类提示。",
+        "title": "减少重复出现的 macOS 文件访问权限提示",
+        "description": "macOS 会将代理和终端工具的文件访问归因于 Orca。授予“完全磁盘访问权限”可减少此类提示。",
         "openSettings": "打开设置",
         "dismiss": "不再显示"
       }
@@ -3871,18 +3871,18 @@
       },
       "skills": {
         "SkillsPage": {
-          "ea72d6185b": "无法扫描技能",
+          "ea72d6185b": "无法扫描本地技能",
           "dc4c3328ee": "显示文件",
           "995fde8337": "无法显示技能文件",
           "3ffd35b491": "无法加载技能库",
           "929e3eb91b": "无法更新保存的技能",
-          "ab5b777350": "检查主目录、存储库、捆绑和插件技能文件夹。",
+          "ab5b777350": "检查本地主目录、存储库、捆绑和插件技能文件夹。",
           "08a321a984": "调整搜索或筛选条件。",
-          "4acd6d68ec": "未找到技能",
+          "4acd6d68ec": "未找到本地技能",
           "6a62a0168c": "没有匹配项",
           "cd7893fbc1": "正在扫描技能",
           "35b9a724a0": "可用的",
-          "0c74e7ff34": "已安装",
+          "0c74e7ff34": "当地的",
           "cb142070b4": "刷新",
           "984405683f": "插件",
           "4d177feabd": "捆绑式",
@@ -3988,7 +3988,7 @@
           "upToDate": "已是最新",
           "installed": "已安装",
           "details": "Details",
-          "needsAttention": "Review skill"
+          "needsAttention": "Needs attention"
         },
         "SkillUpdateResultRows": {
           "stillOutdated": "更新运行后仍为过期状态。"
@@ -5768,7 +5768,7 @@
           "e7bb06007c": "局域网",
           "4a73f5217a": "用于控制其他本地应用程序的脚本的 Apple 事件。",
           "e119f0d66b": "自动化",
-          "7ca17b62c8": "当 Orca 运行的代理读取其他应用的数据时，macOS 会显示 Orca，因为 Orca 是执行终端命令的进程。请为 Orca 授予此权限，以减少此类提示。然后退出并重新打开 Orca。",
+          "7ca17b62c8": "当 Orca 运行的代理读取其他应用的数据时，macOS 会显示 Orca，因为 Orca 是执行终端命令的进程。请为 Orca 和 Orca Helper 授予此权限，以减少此类提示。然后退出 Orca，结束所有仍在运行的 Orca Helper 进程，再重新打开 Orca。",
           "c566bca278": "完全磁盘访问权限",
           "9f35980756": "击键注入、窗口控制和 UI 自动化工具。",
           "5b2f22ca2d": "无障碍",
@@ -6765,15 +6765,15 @@
           "advertiseThisApp": "将此应用作为服务器公布",
           "advertiseThisAppHelp": "创建访问链接，让浏览器、移动客户端或另一个 Orca 客户端连接回这个正在运行的应用。",
           "runtimeReachable": "可连接到 {{value0}}。",
-          "updateAvailableOne": "1 个更新可用",
-          "updatesAvailable": "{{value0}} 个更新可用",
-          "versionUnavailable": "Orca 版本不可用",
-          "updateServer": "更新",
-          "reviewServerUpdates": "服务器更新",
+          "updateAvailableOne": "1 update available",
+          "updatesAvailable": "{{value0}} updates available",
+          "versionUnavailable": "Orca version unavailable",
+          "updateServer": "Update",
+          "reviewServerUpdates": "Server updates",
           "orcaVersion": "Orca v{{value0}}",
-          "removeActiveServerBlocked": "请先在“高级”中选择另一个活动服务器，然后再移除此服务器。",
-          "removeActiveServerDescription": "请先在“高级”中选择另一个活动服务器，然后再移除此服务器。现有的主机会话将保留。",
-          "updatingServers": "正在更新服务器…",
+          "removeActiveServerBlocked": "Choose another Active Server in Advanced before removing this server.",
+          "removeActiveServerDescription": "Choose another Active Server in Advanced before removing this server. Existing host sessions are left alone.",
+          "updatingServers": "Updating servers…",
           "workflow": "远程服务器工作流程",
           "connectWorkflow": "连接到主机",
           "connectWorkflowHelp": "此应用加入另一台机器",
@@ -6917,7 +6917,7 @@
           "dev": "开发工具",
           "devDescription": "仅用于调试 UI 状态的开发工具。",
           "linearTitle": "Linear",
-          "linearDescription": "Linear 在 Orca 中的工作方式、设置清单、智能体技能和提示词示例。",
+          "linearDescription": "Give agents the skill to read and update your linked Linear tickets.",
           "tasksDescription": "连接提供商、安装 Linear 技能并选择要在任务中显示的内容。"
         },
         "SettingsFormControls": {
@@ -9622,13 +9622,13 @@
                   "notInstalled": "未安装",
                   "recheck": "重新检查",
                   "installedDescription": "智能体技能已安装。要更新，请运行：",
-                  "description": "让智能体读取和编辑 Linear 任务。完整引导设置（连接 + 技能 + 可见性）位于设置 → 任务来源。",
+                  "description": "让您的智能体读取和编辑 Linear 任务。",
                   "copyCommand": "复制命令"
                 }
               },
               "search": {
                 "title": "Linear",
-                "description": "Linear 技能状态、使用示例和任务来源设置链接。"
+                "description": "Give agents the skill to read and update your linked Linear tickets."
               }
             }
           }
@@ -9718,15 +9718,15 @@
         },
         "LinearAgentSkillPane": {
           "title": "Linear",
-          "description": "在 Orca 中浏览 Linear 议题、启动关联工作区，并让智能体通过 /orca-linear 更新议题。",
-          "skillTitle": "Linear 技能",
+          "description": "Give agents the skill to read and update your linked Linear tickets.",
+          "skillTitle": "Linear skill",
           "skillDescription": "Enables agents to read linked tickets and post updates to Linear through Orca.",
-          "howToUse": "提示词示例",
-          "howToUseDescription": "点击卡片即可复制提示词。安装技能后，请在关联 Linear 的工作区中使用。",
-          "terminalTitle": "Linear 技能设置",
-          "terminalAriaLabel": "Linear 技能安装终端",
-          "manageConnectionHint": "可在此查看已连接的 Linear 工作区和 API 密钥：",
-          "manageConnectionLink": "集成"
+          "howToUse": "How to use it",
+          "howToUseDescription": "Ask an agent working a Linear-linked worktree to read context, post updates, move the ticket, or attach the PR.",
+          "terminalTitle": "Linear skill setup",
+          "terminalAriaLabel": "Linear skill install terminal",
+          "manageConnectionHint": "Review connected Linear workspaces and API keys in",
+          "manageConnectionLink": "Integrations settings"
         },
         "MobileRelayBetaNotice": {
           "notice": "Orca Relay 目前处于测试阶段。"
@@ -9751,25 +9751,25 @@
           "reviewUpdateOne": "1 update available"
         },
         "RemoteServerUpdateDialog": {
-          "versionUnavailable": "版本不可用",
-          "restartingHelp": "正在等待替代服务器在新版本上重新连接。",
-          "retry": "重试",
-          "update": "更新",
-          "title": "更新远程 Orca 服务器",
-          "description": "查看已配对的服务器，并从此 Orca 客户端更新受支持的安装。",
-          "restartWarning": "更新将重启这些服务器。{{value0}} 个活动标签页和 {{value1}} 个终端窗格可能会短暂断开连接。",
-          "checking": "正在检查已配对的服务器…",
-          "empty": "没有已配对的远程 Orca 服务器。",
-          "checkAgain": "再次检查",
-          "updating": "正在更新服务器…",
-          "updateAll": "更新 {{value0}} 台服务器",
+          "versionUnavailable": "Version unavailable",
+          "restartingHelp": "Waiting for the replacement server to reconnect on the new version.",
+          "retry": "Retry",
+          "update": "Update",
+          "title": "Update Remote Orca Servers",
+          "description": "Review paired servers and update supported installs from this Orca client.",
+          "restartWarning": "Updating restarts these servers. {{value0}} live tabs and {{value1}} terminal panes may briefly disconnect.",
+          "checking": "Checking paired servers…",
+          "empty": "No paired Remote Orca Servers.",
+          "checkAgain": "Check again",
+          "updating": "Updating servers…",
+          "updateAll": "Update {{value0}} servers",
           "noUpdates": "没有可用更新",
-          "updateOne": "更新服务器",
-          "downloadProgress": "{{value0}} 下载进度",
-          "liveTabOne": "1 个活动标签页",
-          "liveTabs": "{{value0}} 个活动标签页",
-          "livePaneOne": "1 个活动窗格",
-          "livePanes": "{{value0}} 个活动窗格"
+          "updateOne": "Update server",
+          "downloadProgress": "{{value0}} download progress",
+          "liveTabOne": "1 live tab",
+          "liveTabs": "{{value0}} live tabs",
+          "livePaneOne": "1 live pane",
+          "livePanes": "{{value0}} live panes"
         },
         "RemoteServerUpdateStatus": {
           "checking": "检查中…",
@@ -9779,13 +9779,13 @@
           "offline": "离线",
           "queued": "已排队",
           "checkingUpdate": "正在检查更新…",
-          "downloading": "正在下载…",
-          "restarting": "正在重启…",
-          "updated": "已更新",
-          "failed": "更新失败",
-          "serviceManagerHelp": "通过启动此服务器的服务管理器更新 Orca。",
-          "unpackedHelp": "开发版本必须从其源代码检出进行更新。",
-          "legacyHelp": "手动更新此服务器一次以启用远程更新。"
+          "downloading": "Downloading…",
+          "restarting": "Restarting…",
+          "updated": "Updated",
+          "failed": "Update failed",
+          "serviceManagerHelp": "Update Orca through the service manager that starts this server.",
+          "unpackedHelp": "Development builds must be updated from their source checkout.",
+          "legacyHelp": "Update this server manually once to enable remote updates."
         },
         "BrowserLinkRoutingSetting": {
           "description": "在 Orca 内置浏览器中打开来自终端、Markdown 和编辑器的 http(s) 链接。{{shortcut}} 始终使用系统浏览器。",
@@ -11794,12 +11794,12 @@
             "switchTaskSourceTitle": "切换任务来源？",
             "differentTaskSource": "，与所选任务来源不同。",
             "currentTaskSource": "当前任务来源",
-            "placeholderNameOrLinearUrl": "输入名称、Linear URL 或 Jira URL",
+            "placeholderNameOrLinearUrl": "输入名称或 Linear URL",
             "placeholderWorkspaceName": "输入工作区名称",
-            "placeholderSmartWithBranchGitLabLinear": "输入名称、#1234、分支、GitHub/GitLab、Linear 或 Jira URL",
-            "placeholderSmartGitLabLinear": "输入名称、#1234、GitHub/GitLab、Linear 或 Jira URL",
-            "placeholderSmartWithBranchGitLab": "输入名称、#1234、分支、GitHub、GitLab 或 Jira URL",
-            "placeholderSmartGitLab": "输入名称、#1234、GitHub、GitLab 或 Jira URL",
+            "placeholderSmartWithBranchGitLabLinear": "输入名称、#1234、分支、GitHub/GitLab 或 Linear URL",
+            "placeholderSmartGitLabLinear": "输入名称、#1234、GitHub/GitLab 或 Linear URL",
+            "placeholderSmartWithBranchGitLab": "输入名称、#1234、分支、GitHub 或 GitLab URL",
+            "placeholderSmartGitLab": "输入名称、#1234、GitHub 或 GitLab URL",
             "unavailable": "不可用",
             "searchGitHub": "搜索 GitHub PR 和议题",
             "searchGitLab": "搜索 GitLab MR 和议题",
@@ -12007,10 +12007,10 @@
         },
         "CustomNetworkAddressDialog": {
           "title": "自定义网络地址",
-          "description": "公布一个手机可访问的地址，例如 Tailscale 主机名、IP 地址或反向代理 URL。",
+          "description": "指定当手机不在同一 Wi-Fi 时可以访问的地址，例如 Tailscale 主机名或静态 IP。",
           "label": "地址",
-          "placeholder": "home.example.com:8443 或 https://example.com/orca",
-          "hint": "请输入 IPv4/IPv6 地址、主机名或完整的 HTTP(S)/WebSocket URL。端口可选。",
+          "placeholder": "my-mac.ts.net、home.example.com 或 192.168.1.50",
+          "hint": "请输入 IP 地址或主机名（Tailscale MagicDNS 名称、DDNS 域名或 LAN 主机名），可选择附加 :端口。",
           "cancel": "取消",
           "use": "使用地址",
           "confirmationError": "此地址无法生成可扫描的配对码。请检查地址后重试。"
@@ -13729,8 +13729,8 @@
           "weeklyReportEvidence": "本周提交摘要、a1 MR 合并状态与 CR 发布状态",
           "weeklyReportRuntime": "在全局浮动工作区运行",
           "globalTaskScopeLabel": "范围",
-          "globalTaskScope": "所有项目",
-          "globalTaskEvidence": "面向全部仓库运行，不限定单个项目",
+          "globalTaskScope": "不绑定项目",
+          "globalTaskEvidence": "运行上下文由 Prompt 与 Skill 自行获取",
           "fb1896a5e7": "取消",
           "57b722cbba": "智能体",
           "6ff66f9012": "新运行",
@@ -13768,10 +13768,10 @@
           "2dc9ee84d0": "3小时",
           "521f77cd58": "1小时",
           "e5ad263ae5": "30分钟",
-          "529dc6c0b7": "无宽限期",
+          "529dc6c0b7": "没有恩典",
           "3d70c185c8": "如果 Orca 或执行主机在计划时间不可用，Orca 会在该窗口内变得可用时运行一次错过的事件。较旧的错过运行将被跳过。",
-          "3df53d554a": "错过运行宽限期帮助",
-          "fc089e5fde": "宽限期"
+          "3df53d554a": "错过运行恩典帮助",
+          "fc089e5fde": "优雅"
         },
         "AutomationPrecheckFields": {
           "d2a2ac89ac": "10分钟",
@@ -13822,7 +13822,7 @@
           "2695883141": "删除",
           "weeklyReportAllProjects": "所有变更项目",
           "weeklyReportFloatingWorkspace": "浮动工作区",
-          "globalTaskAllProjects": "所有项目",
+          "globalTaskAllProjects": "不绑定项目",
           "c3a28c9793": "选择一个自动化来查看运行。",
           "295698292f": "重新运行",
           "0e110a3469": "执行",
@@ -13961,9 +13961,9 @@
             "weeklyReport": {
               "category": "周报",
               "label": "本周产品研发周报",
-              "description": "汇总本周所有变更项目的产品进展，重点关联 a1 MR 合并与发布状态。",
+              "description": "使用 a1-weekly-report Skill 生成结构化周报。",
               "name": "本周产品研发周报",
-              "prompt": "基于本次运行提供的 Orca 证据，生成一份简洁、面向产品的中文周报。按产品分组，只保留工作、进展、MR 合并状态、CR/发布状态、风险和下一步。优先采用 a1 查询结果，不要罗列未提交文件或逐条复述 Git 提交；证据不支持的事实不要编造。"
+              "prompt": "使用 $a1-weekly-report 按推荐直接生成本周周报。"
             },
             "reviewInbox": {
               "category": "全局",

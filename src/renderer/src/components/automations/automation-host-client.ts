@@ -76,7 +76,7 @@ function toRuntimeAutomationCreateInput(
   const { projectId, workspaceId, ...rest } = input
   return {
     ...rest,
-    repo: projectId,
+    repo: projectId || undefined,
     workspace: input.workspaceMode === 'existing' ? (workspaceId ?? undefined) : undefined
   }
 }
@@ -123,8 +123,11 @@ export async function listAutomationRunsForTarget(
   return result.runs
 }
 
-export async function createAutomationForTarget(input: AutomationCreateInput): Promise<Automation> {
-  const target = getAutomationCreateTarget(input)
+export async function createAutomationForTarget(
+  input: AutomationCreateInput,
+  sourceTarget?: AutomationHostTarget | null
+): Promise<Automation> {
+  const target = sourceTarget ?? getAutomationCreateTarget(input)
   if (target.kind === 'local') {
     return await window.api.automations.create(input)
   }

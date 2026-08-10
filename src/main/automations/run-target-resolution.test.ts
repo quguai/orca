@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { homedir } from 'node:os'
 import type { Store } from '../persistence'
 import type { Automation } from '../../shared/automations-types'
 import type { WorkspaceRunContext } from '../../shared/task-source-context'
@@ -80,6 +81,22 @@ function makeStore(setups: ProjectHostSetup[], repos: Repo[]): Store {
 }
 
 describe('resolveAutomationRunTarget projectId drift', () => {
+  it('resolves projectless global automations to the local floating-workspace host', () => {
+    const store = makeStore([], [])
+    const automation = {
+      ...makeAutomation(makeRunContext()),
+      kind: 'global_task' as const,
+      projectId: '',
+      runContext: null
+    }
+
+    expect(resolveAutomationRunTarget(store, automation)).toEqual({
+      ok: true,
+      cwd: homedir(),
+      repo: null
+    })
+  })
+
   it('resolves when only the derived projectId tier differs (repo: snapshot vs github: setup)', () => {
     const store = makeStore([makeSetup()], [makeRepo()])
     const automation = makeAutomation(makeRunContext({ projectId: 'repo:repo-1' }))

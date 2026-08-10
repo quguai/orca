@@ -157,6 +157,7 @@ import type {
   AutomationUpdateInput,
   AutomationWorkspaceMode
 } from '../../shared/automations-types'
+import { isGlobalScopedKind } from '../../shared/automation-scope'
 import type {
   AutomationWorkspaceProvenance,
   CliWorkspaceProvenance,
@@ -3832,10 +3833,16 @@ export class OrcaRuntimeService {
     if (hasRuntimeAutomationUpdateValue(updates, 'missedRunGraceMinutes')) {
       patch.missedRunGraceMinutes = updates.missedRunGraceMinutes
     }
+    const nextKind = updates.kind ?? current.kind
+    const scopeChanged =
+      updates.kind !== undefined &&
+      isGlobalScopedKind(nextKind) !== isGlobalScopedKind(current.kind)
     const targetChanged =
       hasRuntimeAutomationUpdateValue(updates, 'repo') ||
       hasRuntimeAutomationUpdateValue(updates, 'workspace') ||
-      hasRuntimeAutomationUpdateValue(updates, 'workspaceMode')
+      hasRuntimeAutomationUpdateValue(updates, 'workspaceMode') ||
+      scopeChanged ||
+      (isGlobalScopedKind(nextKind) && Boolean(current.projectId))
     if (targetChanged) {
       const target = await this.resolveAutomationTarget(updates, current)
       if (patch.reuseSession === true && target.workspaceMode !== 'existing') {
@@ -3872,6 +3879,7 @@ export class OrcaRuntimeService {
 
   private async resolveAutomationTarget(
     input: {
+      kind?: Automation['kind']
       repo?: string
       workspace?: string
       workspaceMode?: AutomationWorkspaceMode
@@ -3883,6 +3891,9 @@ export class OrcaRuntimeService {
     workspaceMode: AutomationWorkspaceMode
     workspaceId?: string | null
   }> {
+    if (isGlobalScopedKind(input.kind ?? current?.kind)) {
+      return { projectId: '', workspaceMode: 'new_per_run', workspaceId: null }
+    }
     const hasRepo = input.repo !== undefined
     const hasWorkspace = input.workspace !== undefined
     if (

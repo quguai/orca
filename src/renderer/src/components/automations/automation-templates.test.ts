@@ -7,21 +7,21 @@ afterEach(async () => {
 })
 
 describe('automation templates', () => {
-  it('provides a complete Chinese weekly-report template', async () => {
+  it('uses the weekly-report skill without Orca evidence injection', async () => {
     await i18n.changeLanguage('zh')
 
     const weeklyReport = getAutomationTemplates().find(
-      (template) => template.kind === 'weekly_report'
+      (template) => template.id === 'weekly-report'
     )
 
     expect(weeklyReport).toMatchObject({
+      kind: 'global_task',
       category: '周报',
       label: '本周产品研发周报',
       name: '本周产品研发周报',
-      description: '汇总本周所有变更项目的产品进展，重点关联 a1 MR 合并与发布状态。'
+      description: '使用 a1-weekly-report Skill 生成结构化周报。',
+      prompt: '使用 $a1-weekly-report 按推荐直接生成本周周报。'
     })
-    expect(weeklyReport?.prompt).toContain('面向产品的中文周报')
-    expect(weeklyReport?.prompt).toContain('MR 合并状态、CR/发布状态')
-    expect(weeklyReport?.prompt).toContain('不要罗列未提交文件')
+    expect(weeklyReport?.prompt).not.toContain('Orca')
   })
 })

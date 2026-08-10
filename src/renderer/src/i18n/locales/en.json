@@ -699,7 +699,7 @@
             "readTicket": "Read the linked ticket",
             "postUpdate": "Post a progress update",
             "moveState": "Move the ticket forward",
-            "attachPr": "Attach the review link",
+            "attachPr": "Attach the PR link",
             "triageFollowups": "Triage and create follow-ups",
             "readTicketSummary": "Pull the linked Linear issue's full context before starting work.",
             "readTicketPrompt": "Use {{value0}} to read the linked Linear issue for this worktree, then summarize the goal and acceptance criteria before you start.",
@@ -707,8 +707,8 @@
             "postUpdatePrompt": "Use {{value0}} to post a completion update on the linked Linear issue with what changed and how it was verified.",
             "moveStateSummary": "Advance the Linear workflow state as the work progresses.",
             "moveStatePrompt": "Use {{value0}} to move the linked Linear issue to In Review now that the change is ready.",
-            "attachPrSummary": "Link the pull or merge request to the Linear issue when you open it.",
-            "attachPrPrompt": "Use {{value0}} to attach this pull or merge request to the linked Linear issue.",
+            "attachPrSummary": "Link the pull request to the Linear issue when you open it.",
+            "attachPrPrompt": "Use {{value0}} to attach this PR to the linked Linear issue with a PR link.",
             "triageFollowupsSummary": "Set assignee, priority, or estimate, and file parented follow-up tickets.",
             "triageFollowupsPrompt": "Use {{value0}} to triage the linked Linear issue — set priority and estimate — and create a parented follow-up ticket for the deferred cleanup."
           }
@@ -893,7 +893,7 @@
         "devSearchKeywordNotification": "notification",
         "projectHostsSummary": "{{value0}} hosts",
         "linearTitle": "Linear",
-        "linearDescription": "How Linear works in Orca, setup checklist, agent skill, and example prompts.",
+        "linearDescription": "Give agents the skill to read and update your linked Linear tickets.",
         "pluginsTitle": "Plugins",
         "pluginsDescription": "Install and manage experimental Orca plugins.",
         "tasksDescription": "Connect providers, install the Linear skill, and choose what appears in Tasks.",
@@ -909,8 +909,8 @@
         "pasteTooLarge": "Paste is too large."
       },
       "useMacosTccPromptNotice": {
-        "title": "Seeing “Orca would like to access…” prompts?",
-        "description": "Permission messages from macOS may appear when an agent or terminal tool running in Orca attempts to access protected files. Grant Full Disk Access in Settings to reduce these prompts.",
+        "title": "Reduce repeated macOS file-access prompts",
+        "description": "macOS attributes file access by your agents and terminal tools to Orca. Granting Full Disk Access reduces these prompts.",
         "openSettings": "Open Settings",
         "dismiss": "Don't show again"
       }
@@ -4033,7 +4033,7 @@
           "5bdcf2c305": "Dashboard",
           "fd8be694ec": "My Skills",
           "7c1f1b1bb0": "Workspaces",
-          "ea72d6185b": "Could not scan skills",
+          "ea72d6185b": "Could not scan local skills",
           "dc4c3328ee": "Reveal file",
           "995fde8337": "Could not reveal skill file",
           "3ffd35b491": "Could not load skill library",
@@ -4041,13 +4041,13 @@
           "c4d59090b3": "Removed from My Skills",
           "c59d9f0cc1": "Saved to My Skills",
           "f43ad6edf3": "Skills",
-          "ab5b777350": "Checked home, repository, bundled, and plugin skill folders.",
+          "ab5b777350": "Checked local home, repository, bundled, and plugin skill folders.",
           "08a321a984": "Adjust the search or filters.",
-          "4acd6d68ec": "No skills found",
+          "4acd6d68ec": "No local skills found",
           "6a62a0168c": "No matches",
           "cd7893fbc1": "Scanning skills",
           "35b9a724a0": "Available",
-          "0c74e7ff34": "Installed",
+          "0c74e7ff34": "Local",
           "cb142070b4": "Refresh",
           "984405683f": "Plugin",
           "4d177feabd": "Bundled",
@@ -4166,7 +4166,7 @@
           "upToDate": "Up to date",
           "installed": "Installed",
           "details": "Details",
-          "needsAttention": "Review skill",
+          "needsAttention": "Needs attention",
           "checking": "Checking...",
           "checkFailed": "Check failed"
         }
@@ -6033,7 +6033,7 @@
           "e7bb06007c": "Local Network",
           "4a73f5217a": "Apple Events for scripts that control other local apps.",
           "e119f0d66b": "Automation",
-          "7ca17b62c8": "macOS names Orca when the agents it runs read other apps' data, because Orca is the responsible process for terminal commands. Grant this to Orca to reduce those prompts. Then quit and reopen Orca.",
+          "7ca17b62c8": "macOS names Orca when the agents it runs read other apps' data, because Orca is the responsible process for terminal commands. Grant this to Orca and Orca Helper to reduce those prompts. Then quit Orca, end any surviving Orca Helper process, and reopen Orca.",
           "c566bca278": "Full Disk Access",
           "9f35980756": "Keystroke injection, window control, and UI automation tools.",
           "5b2f22ca2d": "Accessibility",
@@ -7272,7 +7272,7 @@
           "dev": "Dev Tools",
           "devDescription": "Dev-only tools for exercising UI states.",
           "linearTitle": "Linear",
-          "linearDescription": "How Linear works in Orca, setup checklist, agent skill, and example prompts.",
+          "linearDescription": "Give agents the skill to read and update your linked Linear tickets.",
           "tasksDescription": "Connect providers, install the Linear skill, and choose what appears in Tasks."
         },
         "SettingsFormControls": {
@@ -9956,13 +9956,13 @@
                   "notInstalled": "Not installed",
                   "recheck": "Re-check",
                   "installedDescription": "Agent skill installed. To update it, run:",
-                  "description": "Let agents read and edit Linear tasks. Full guided setup (connect + skill + visibility) is under Settings → Task Sources.",
+                  "description": "Let your agents read and edit Linear tasks.",
                   "copyCommand": "Copy command"
                 }
               },
               "search": {
                 "title": "Linear",
-                "description": "Linear skill status, usage examples, and links to Task Sources setup."
+                "description": "Give agents the skill to read and update your linked Linear tickets."
               }
             }
           }
@@ -10022,7 +10022,7 @@
           "signIn": "Sign in for Relay",
           "signInAgain": "Sign in again for Relay",
           "localTitle": "LAN",
-          "localDescription": "Phone must be on this Wi‑Fi or connected through Tailscale. No account needed.",
+          "localDescription": "Phone must be on this Wi‑Fi or your Tailscale. No sign-in.",
           "retrying": "Retrying"
         },
         "MobilePairingSetupSection": {
@@ -10053,15 +10053,15 @@
         },
         "LinearAgentSkillPane": {
           "title": "Linear",
-          "description": "How Linear works in Orca: browse issues, start linked workspaces, and let agents update tickets with /orca-linear.",
+          "description": "Give agents the skill to read and update your linked Linear tickets.",
           "skillTitle": "Linear skill",
           "skillDescription": "Enables agents to read linked tickets and post updates to Linear through Orca.",
-          "howToUse": "Example prompts",
-          "howToUseDescription": "Click a card to copy a prompt. Use these in a Linear-linked worktree after the skill is installed.",
+          "howToUse": "How to use it",
+          "howToUseDescription": "Ask an agent working a Linear-linked worktree to read context, post updates, move the ticket, or attach the PR.",
           "terminalTitle": "Linear skill setup",
           "terminalAriaLabel": "Linear skill install terminal",
           "manageConnectionHint": "Review connected Linear workspaces and API keys in",
-          "manageConnectionLink": "Integrations"
+          "manageConnectionLink": "Integrations settings"
         },
         "MobileRelayBetaNotice": {
           "notice": "Orca Relay is in beta."
@@ -12266,12 +12266,12 @@
             "switchTaskSourceTitle": "Switch task source?",
             "differentTaskSource": ", which is different from the selected task source.",
             "currentTaskSource": "current task source",
-            "placeholderNameOrLinearUrl": "Type a name, Linear URL, or Jira URL",
+            "placeholderNameOrLinearUrl": "Type a name or Linear URL",
             "placeholderWorkspaceName": "Type a workspace name",
-            "placeholderSmartWithBranchGitLabLinear": "Type a name, #1234, branch, GitHub/GitLab, Linear, or Jira URL",
-            "placeholderSmartGitLabLinear": "Type a name, #1234, GitHub/GitLab, Linear, or Jira URL",
-            "placeholderSmartWithBranchGitLab": "Type a name, #1234, branch, GitHub, GitLab, or Jira URL",
-            "placeholderSmartGitLab": "Type a name, #1234, GitHub, GitLab, or Jira URL",
+            "placeholderSmartWithBranchGitLabLinear": "Type a name, #1234, branch, GitHub/GitLab or Linear URL",
+            "placeholderSmartGitLabLinear": "Type a name, #1234, GitHub/GitLab or Linear URL",
+            "placeholderSmartWithBranchGitLab": "Type a name, #1234, branch, GitHub or GitLab URL",
+            "placeholderSmartGitLab": "Type a name, #1234, GitHub or GitLab URL",
             "unavailable": "Unavailable",
             "searchGitHub": "Search GitHub PRs and issues",
             "searchGitLab": "Search GitLab MRs and issues",
@@ -12497,10 +12497,10 @@
         },
         "CustomNetworkAddressDialog": {
           "title": "Custom network address",
-          "description": "Advertise an address your phone can reach — for example a Tailscale hostname, IP address, or reverse-proxy URL.",
+          "description": "Advertise an address your phone can reach when it is not on the same Wi-Fi — for example a Tailscale hostname or a static IP.",
           "label": "Address",
-          "placeholder": "home.example.com:8443 or https://example.com/orca",
-          "hint": "Enter an IPv4/IPv6 address, hostname, or full HTTP(S)/WebSocket URL. Ports are optional.",
+          "placeholder": "my-mac.ts.net, home.example.com, or 192.168.1.50",
+          "hint": "Enter an IP address or a hostname — a Tailscale MagicDNS name, a DDNS domain, or a LAN hostname — optionally with :port.",
           "cancel": "Cancel",
           "use": "Use address",
           "confirmationError": "This address could not produce a scannable pairing code. Check the address and try again."
@@ -14258,8 +14258,8 @@
           "weeklyReportEvidence": "Weekly commit summary, a1 MR merge status, and CR release status",
           "weeklyReportRuntime": "Runs in Floating Workspace",
           "globalTaskScopeLabel": "Scope",
-          "globalTaskScope": "All projects",
-          "globalTaskEvidence": "Runs against every repo, not a single project",
+          "globalTaskScope": "No project",
+          "globalTaskEvidence": "Prompt and skills provide the run context",
           "fb1896a5e7": "Cancel",
           "57b722cbba": "Agent",
           "6ff66f9012": "New run",
@@ -14351,7 +14351,7 @@
           "2695883141": "delete",
           "weeklyReportAllProjects": "All changed projects",
           "weeklyReportFloatingWorkspace": "Floating Workspace",
-          "globalTaskAllProjects": "All projects",
+          "globalTaskAllProjects": "No project",
           "c3a28c9793": "Select an automation to view runs.",
           "295698292f": "Rerun",
           "0e110a3469": "Runs",
@@ -14503,9 +14503,9 @@
             "weeklyReport": {
               "category": "Weekly report",
               "label": "Weekly change report",
-              "description": "Summarize product progress across every project changed this week, focusing on a1 MR merge and release status.",
+              "description": "Use the a1-weekly-report skill to generate a structured weekly report.",
               "name": "Weekly change report",
-              "prompt": "Write a concise, product-oriented weekly report from the Orca evidence provided with this run. Group work by product and cover the work, progress, MR merge status, CR or release status, risks, and next actions. Prioritize a1 results. Do not list uncommitted files or invent facts that the evidence does not support."
+              "prompt": "Use $a1-weekly-report to generate this week's report with the recommended emphasis and no interactive selection."
             },
             "reviewInbox": {
               "category": "Global",

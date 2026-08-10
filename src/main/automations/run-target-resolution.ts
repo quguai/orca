@@ -1,12 +1,14 @@
+import { homedir } from 'node:os'
 import type { Store } from '../persistence'
 import type { Automation } from '../../shared/automations-types'
+import { isGlobalScopedAutomation } from '../../shared/automation-scope'
 import { getAutomationLegacyRepoId } from '../../shared/automation-run-identity'
 import { getRepoExecutionHostId, parseExecutionHostId } from '../../shared/execution-host'
 import type { ProjectHostSetup, Repo } from '../../shared/types'
 import { splitWorktreeIdForFilesystem } from '../../shared/worktree-id'
 
 export type AutomationRunTargetResult =
-  | { ok: true; cwd: string; repo: Repo; setup?: ProjectHostSetup }
+  | { ok: true; cwd: string; repo: Repo | null; setup?: ProjectHostSetup }
   | { ok: false; error: string }
 
 type AutomationRunTargetOptions = {
@@ -28,6 +30,9 @@ export function resolveAutomationRunTarget(
   automation: Automation,
   options: AutomationRunTargetOptions = {}
 ): AutomationRunTargetResult {
+  if (isGlobalScopedAutomation(automation)) {
+    return { ok: true, cwd: homedir(), repo: null }
+  }
   const context = automation.runContext ?? null
   if (!context) {
     const repo = store.getRepo(getAutomationLegacyRepoId(automation))

@@ -8,6 +8,7 @@ const SCRIPT_DIR = import.meta.dirname
 const REPO_ROOT = path.resolve(SCRIPT_DIR, '..', '..')
 
 const CANONICAL_GUIDE_NAMES = [
+  'a1-weekly-report',
   'computer-use',
   'linear-tickets',
   'orca-cli',
@@ -21,6 +22,7 @@ const CANONICAL_GUIDE_NAMES = [
 // Why: old discovery stubs can outlive a rename indefinitely, so aliases are
 // a compatibility ledger: add entries for renames, but never remove them.
 const GUIDE_ALIASES = {
+  'a1-weekly-report': [],
   'computer-use': [],
   'linear-tickets': [],
   'orca-cli': [],

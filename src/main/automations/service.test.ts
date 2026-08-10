@@ -121,6 +121,44 @@ describe('AutomationService', () => {
     )
   })
 
+  it('dispatches projectless global automations', async () => {
+    vi.setSystemTime(new Date('2026-05-13T08:00:00Z'))
+    const store = await createStore()
+    const automation = store.createAutomation({
+      kind: 'global_task',
+      name: 'Weekly report',
+      prompt: 'Use $a1-weekly-report.',
+      agentId: 'codex',
+      projectId: '',
+      runContext: null,
+      workspaceMode: 'new_per_run',
+      timezone: 'UTC',
+      rrule: 'FREQ=WEEKLY;BYDAY=FR',
+      dtstart: new Date('2026-05-14T00:00:00Z').getTime()
+    })
+    const send = vi.fn()
+    const service = new AutomationService(store)
+    service.setWebContents({
+      isDestroyed: () => false,
+      send
+    } as never)
+    service.setRendererReady()
+
+    const run = await service.runNow(automation.id)
+
+    expect(run.status).toBe('dispatching')
+    expect(send).toHaveBeenCalledWith(
+      'automations:dispatchRequested',
+      expect.objectContaining({
+        automation: expect.objectContaining({
+          kind: 'global_task',
+          projectId: '',
+          runContext: null
+        })
+      })
+    )
+  })
+
   it('skips dispatch when the selected project host setup is gone', async () => {
     vi.setSystemTime(new Date('2026-05-13T08:00:00Z'))
     const store = await createStore()

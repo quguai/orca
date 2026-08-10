@@ -2,13 +2,13 @@
 name: orca-cli
 description: >-
   Use the public `orca` CLI to operate Orca-managed worktrees, folder contexts,
-  terminals, repos, automations, artifacts, worktree comments, and the browser
-  embedded inside the Orca app. Use when the user says "$orca-cli", "use orca cli",
+  terminals, repos, automations, durable local tasks, worktree comments, and the browser embedded
+  inside the Orca app. Use when the user says "$orca-cli", "use orca cli",
   "Orca worktree", "child worktree", "cardStatus", "spawn codex/claude in a worktree",
-  "read/wait/send Orca terminal", "terminal send", "full handoff", "handover",
-  "give this to another agent", "another worktree", "Orca browser", "orca artifacts",
-  "share HTML/Markdown", "public artifact link", or "control the browser inside
-  Orca". Prefer this over raw `git worktree`, ad hoc
+  "read/wait/send Orca terminal", "terminal send", "Orca local task", "本地任务",
+  "full handoff", "handover",
+  "give this to another agent", "another worktree", "Orca browser", or
+  "control the browser inside Orca". Prefer this over raw `git worktree`, ad hoc
   PTYs, Playwright, or Computer Use when the task touches Orca-managed state.
   Use Computer Use for browser windows, webviews, or desktop UI outside Orca's
   embedded browser.
@@ -167,6 +167,21 @@ ORCA worktree set --worktree active --comment "fix implemented; running integrat
 Update after meaningful state changes such as repro, fix, validation, handoff, or blocker. Keep comments short/current; failures are best-effort unless Orca state was requested.
 
 Card status uses `--workspace-status <id>`; defaults are `todo`, `in-progress`, `in-review`, `completed`.
+
+## Local Tasks
+
+Local tasks are durable Orca task records. They are independent of worktree, terminal, and agent process lifetime, so use them instead of `worktree ps` when the user asks for saved task titles, descriptions, labels, comments, or activity.
+
+```text
+ORCA local-task list --json
+ORCA local-task list --include-archived --json
+ORCA local-task show <LT-id-or-uuid> --json
+```
+
+- `list` excludes archived tasks by default and returns full descriptions plus resolved labels.
+- `show` accepts the displayed `LT-xxxxxx` id, a full UUID, or a unique id prefix. It also returns comments and activity in chronological order.
+- These commands are read-only. Do not reconstruct task details from worktree prompts, assistant messages, terminal output, or process state.
+- The selected Orca runtime owns the data. With `--environment`, WSL, or SSH, the command reads that runtime host's persistent local-task store.
 
 ## Terminals
 
@@ -343,7 +358,7 @@ Common recoveries:
 
 ## Next Action
 
-Confirm `orca status --json` unless already checked this turn, then choose the narrowest command for the job: `worktree ps/current/create`, `terminal list/read/wait/send`, `automations list`, `artifacts list/share`, or built-in browser `snapshot`.
+Confirm `orca status --json` unless already checked this turn, then choose the narrowest command for the job: `local-task list/show`, `worktree ps/current/create`, `terminal list/read/wait/send`, `automations list`, or built-in browser `snapshot`.
 
 ## Mobile Emulator (iOS Simulator via serve-sim)
 

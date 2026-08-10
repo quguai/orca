@@ -108,7 +108,7 @@ export function AutomationEditorDialogFooter({
                     )
                   : translate(
                       'auto.components.automations.AutomationEditorDialog.globalTaskScope',
-                      'All projects'
+                      'No project'
                     )}
               </span>
               <span className="ml-auto hidden shrink-0 text-xs text-muted-foreground sm:inline">
@@ -119,7 +119,7 @@ export function AutomationEditorDialogFooter({
                     )
                   : translate(
                       'auto.components.automations.AutomationEditorDialog.globalTaskEvidence',
-                      'Runs against every repo, not a single project'
+                      'Prompt and skills provide the run context'
                     )}
                 {' · '}
                 {translate(
@@ -324,7 +324,7 @@ export function AutomationEditorDialogFooter({
         <Button
           variant="outline"
           onClick={onSave}
-          disabled={isSaving || repos.length === 0 || !canSave}
+          disabled={isSaving || (!isGlobalScoped && repos.length === 0) || !canSave}
           className="border-foreground/25 bg-foreground/[0.04] text-foreground hover:bg-foreground/[0.08]"
         >
           {isEditing || isEditingExternal || isHermesCreate || isSaving ? null : (

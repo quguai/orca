@@ -354,7 +354,13 @@ function getOptionalAutomationKindFlag(
   if (value === 'weekly-report' || value === 'weekly_report') {
     return 'weekly_report'
   }
-  throw new RuntimeClientError('invalid_argument', '--kind must be agent-task or weekly-report')
+  if (value === 'global-task' || value === 'global_task') {
+    return 'global_task'
+  }
+  throw new RuntimeClientError(
+    'invalid_argument',
+    '--kind must be agent-task, weekly-report, or global-task'
+  )
 }
 
 async function resolveDefaultTarget(

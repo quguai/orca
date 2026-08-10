@@ -13,6 +13,17 @@ function sourceBetween(startPattern: string, endPattern: string): string {
 }
 
 describe('headless automation dispatcher source boundaries', () => {
+  it('launches global automations in the floating workspace without a repo', () => {
+    const globalSection = sourceBetween(
+      'if (isGlobalScoped) {',
+      "} else if (automation.workspaceMode === 'new_per_run')"
+    )
+
+    expect(globalSection).toContain('runtimeService.createAgentSession(')
+    expect(globalSection).toContain('FLOATING_TERMINAL_WORKTREE_ID')
+    expect(globalSection).not.toContain('target.repo')
+  })
+
   it('creates new-per-run workspaces from the resolved run target repo', () => {
     const createArgsSection = sourceBetween('buildHeadlessAutomationWorktreeCreateArgs({', '})')
 

@@ -127,48 +127,31 @@ export function WorktreeCardStatusSlot({
     newCardStyle && isUnread && showStatus && status !== 'working' && status !== 'permission'
   const reviewStatusIconClassName = compactReviewAndBranchStatusIconClassName
   const branchStatusIcon = <GitBranch className={branchStatusIconClassName} aria-hidden="true" />
-  const passiveStatus =
-    canShowReviewStatus && prDisplay ? (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span className={cn('inline-flex size-5 items-center justify-center p-0.5', className)}>
-            <ReviewIcon
-              review={prDisplay}
-              className={reviewStatusIconClassName}
-              variant="generic"
-            />
-            <span className="sr-only">{passiveStatusTooltip}</span>
-          </span>
-        </TooltipTrigger>
-        <TooltipContent side="right" sideOffset={8}>
-          <span>{passiveStatusTooltip}</span>
-        </TooltipContent>
-      </Tooltip>
-    ) : canShowBranchStatus ? (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span className={cn('inline-flex size-5 items-center justify-center p-0.5', className)}>
-            {branchStatusIcon}
-            <span className="sr-only">{passiveStatusTooltip}</span>
-          </span>
-        </TooltipTrigger>
-        <TooltipContent side="right" sideOffset={8}>
-          <span>{passiveStatusTooltip}</span>
-        </TooltipContent>
-      </Tooltip>
-    ) : newCardStyle && showStatus ? (
-      <>
-        <span className={cn('inline-flex size-5 items-center justify-center', className)}>
-          <StatusIndicator status={status} aria-hidden="true" />
+  const passiveStatus = canShowBranchStatus ? (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className={cn('inline-flex size-5 items-center justify-center p-0.5', className)}>
+          {branchStatusIcon}
+          <span className="sr-only">{passiveStatusTooltip}</span>
         </span>
-        <span className="sr-only">{passiveStatusTooltip}</span>
-      </>
-    ) : (
-      <>
-        <StatusIndicator status={status} aria-hidden="true" className={className} />
-        <span className="sr-only">{statusLabel}</span>
-      </>
-    )
+      </TooltipTrigger>
+      <TooltipContent side="right" sideOffset={8}>
+        <span>{passiveStatusTooltip}</span>
+      </TooltipContent>
+    </Tooltip>
+  ) : newCardStyle && showStatus ? (
+    <>
+      <span className={cn('inline-flex size-5 items-center justify-center', className)}>
+        <StatusIndicator status={status} aria-hidden="true" />
+      </span>
+      <span className="sr-only">{passiveStatusTooltip}</span>
+    </>
+  ) : (
+    <>
+      <StatusIndicator status={status} aria-hidden="true" className={className} />
+      <span className="sr-only">{statusLabel}</span>
+    </>
+  )
 
   const unreadActionEnabled = showUnreadAction && !newCardStyle
 

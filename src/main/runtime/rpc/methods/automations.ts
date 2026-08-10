@@ -22,7 +22,7 @@ const TuiAgent = requiredString('Missing provider').refine(isTuiAgent, {
 })
 
 const AutomationWorkspaceMode = z.enum(['existing', 'new_per_run']).optional()
-const AutomationKind = z.enum(['agent_task', 'weekly_report']).optional()
+const AutomationKind = z.enum(['agent_task', 'weekly_report', 'global_task']).optional()
 const SetupDecision = z.enum(['inherit', 'run', 'skip']).optional()
 const ExecutionHostId = requiredString('Missing host id').transform((value, ctx) => {
   const hostId = normalizeExecutionHostId(value)

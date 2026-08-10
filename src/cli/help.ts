@@ -71,6 +71,10 @@ Worktrees:
   worktree rm               Remove a worktree from Orca and git
   worktree ps               Show a compact orchestration summary across worktrees
 
+Local Tasks:
+  local-task list           List durable Orca local tasks
+  local-task show           Show one durable Orca local task with comments and activity
+
 Files:
   file open                 Open a workspace file in the Orca editor
   file diff                 Open a workspace file diff in the Orca editor
@@ -497,7 +501,7 @@ function formatCommandFlagHelp(flag: string, commandPath: string[]): string {
     return '--parent-current      Use the current linked issue as parent'
   }
   if (command.startsWith('automations ') && flag === 'kind') {
-    return '--kind <type>         agent-task or weekly-report'
+    return '--kind <type>         agent-task, weekly-report, or global-task'
   }
   if (command === 'worktree create' && flag === 'parent-worktree') {
     return '--parent-worktree <selector> Parent selector such as active/current, id:<repo-id>::<path>, branch:<branch>, issue:<number>, path:<path>, folder:<id>, or worktree:<worktreeId>'

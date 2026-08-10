@@ -345,6 +345,28 @@ describe('useAutomationDispatchEvents setup launch', () => {
     )
   })
 
+  it('runs projectless global tasks without injecting Orca weekly evidence', async () => {
+    await registerAndDispatch(
+      makeAutomation({
+        kind: 'global_task',
+        projectId: '',
+        runContext: null,
+        setupDecision: 'skip'
+      })
+    )
+
+    expect(state.fetchAllWorktrees).not.toHaveBeenCalled()
+    expect(mockCollectWeeklyReportEvidence).not.toHaveBeenCalled()
+    expect(mockBuildWeeklyReportPrompt).not.toHaveBeenCalled()
+    expect(mockLaunchAgentBackgroundSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        worktreeId: FLOATING_TERMINAL_WORKTREE_ID,
+        prompt: 'run this'
+      })
+    )
+    expect(mockCreateWorktree).not.toHaveBeenCalled()
+  })
+
   it('keeps launching the agent when background setup terminal launch fails', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
     mockLaunchWorktreeBackgroundTerminals.mockRejectedValue(new Error('tab launch failed'))

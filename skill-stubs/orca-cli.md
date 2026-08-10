@@ -5,11 +5,12 @@ reference is served by the `orca` binary itself — kept out of this file on pur
 can never drift from the binary that will actually run your commands.
 
 Engage Orca whenever its running editor/runtime is the source of truth: Orca-managed
-worktrees, folder contexts, terminals, repos, automations, worktree comments, and the
-browser embedded inside the Orca app. Triggers include "$orca-cli", "Orca worktree",
-"child worktree", "spawn codex/claude in a worktree", "read/wait/send Orca terminal",
-"full handoff" / "handover" / "give this to another agent", and "control the browser
-inside Orca". Use plain shell tools when Orca state does not matter.
+worktrees, folder contexts, terminals, repos, automations, durable local tasks, worktree
+comments, and the browser embedded inside the Orca app. Triggers include "$orca-cli",
+"Orca worktree", "Orca local task" / "本地任务", "child worktree",
+"spawn codex/claude in a worktree", "read/wait/send Orca terminal", "full handoff" /
+"handover" / "give this to another agent", and "control the browser inside Orca". Use
+plain shell tools when Orca state does not matter.
 
 ## Resolve the CLI for this session
 
@@ -37,7 +38,7 @@ ORCA skills get orca-cli
 ```
 
 That prints the complete, version-matched guide for the exact binary that will handle your
-next commands — worktrees, handoffs, terminals, automations, and the built-in browser.
+next commands — local tasks, worktrees, handoffs, terminals, automations, and the built-in browser.
 Read it first, then run the specific command you need.
 
 Don't guess subcommands or flags from memory or from a cached copy of this stub. They

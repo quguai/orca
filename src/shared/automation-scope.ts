@@ -4,8 +4,7 @@ import type { AutomationKind } from './automations-types'
  * Where an automation runs, independent of what its prompt does.
  *
  * - `repo`: scoped to a single registered repo + workspace (the default).
- * - `global`: not tied to any one repo — runs in the floating workspace and
- *   borrows a local repo only to satisfy the run-target resolver.
+ * - `global`: not tied to any repo — runs in the floating workspace.
  *
  * Why: the codebase used to overload `kind === 'weekly_report'` for both
  * "global/floating scope" plumbing and "weekly-report prompt builder". Scope

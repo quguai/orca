@@ -1,0 +1,4 @@
+interface:
+  display_name: "A1 研发周报"
+  short_description: "以代码为主线关联 Aone 与 Orca，生成简洁的向上研发周报"
+  default_prompt: "使用 $a1-weekly-report 汇总本周工作，先让我多选重点；成稿后完成去重检查并直接追加到本地年月归档。"

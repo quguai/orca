@@ -130,6 +130,45 @@ describe('automation host client', () => {
     )
   })
 
+  it('creates projectless global automations on the selected host', async () => {
+    const target = { kind: 'environment' as const, environmentId: 'gpu' }
+    const automation = makeAutomation({
+      kind: 'global_task',
+      projectId: '',
+      runContext: null
+    })
+    const input: AutomationCreateInput = {
+      kind: 'global_task',
+      name: automation.name,
+      prompt: automation.prompt,
+      precheck: null,
+      agentId: automation.agentId,
+      runContext: null,
+      projectId: '',
+      workspaceMode: 'new_per_run',
+      workspaceId: null,
+      setupDecision: 'skip',
+      timezone: automation.timezone,
+      rrule: automation.rrule,
+      dtstart: automation.dtstart
+    }
+    vi.mocked(callRuntimeRpc).mockResolvedValueOnce({ automation })
+
+    await createAutomationForTarget(input, target)
+
+    expect(callRuntimeRpc).toHaveBeenCalledWith(
+      target,
+      'automation.create',
+      expect.objectContaining({
+        kind: 'global_task',
+        repo: undefined,
+        workspace: undefined,
+        runContext: null
+      }),
+      { timeoutMs: 15_000 }
+    )
+  })
+
   it('updates and manually runs SSH-host automations through the remote server that listed them', async () => {
     const automation = makeAutomation({
       runContext: {

@@ -21,7 +21,7 @@ export type AutomationTemplate = {
 export const getAutomationTemplates = createLocalizedCatalog((): AutomationTemplate[] => [
   {
     id: 'weekly-report',
-    kind: 'weekly_report',
+    kind: 'global_task',
     category: translate(
       'auto.components.automations.automation.templates.weeklyReport.category',
       'Weekly report'
@@ -32,7 +32,7 @@ export const getAutomationTemplates = createLocalizedCatalog((): AutomationTempl
     ),
     description: translate(
       'auto.components.automations.automation.templates.weeklyReport.description',
-      'Summarize product progress across every project changed this week, focusing on a1 MR merge and release status.'
+      'Use the a1-weekly-report skill to generate a structured weekly report.'
     ),
     name: translate(
       'auto.components.automations.automation.templates.weeklyReport.name',
@@ -40,7 +40,7 @@ export const getAutomationTemplates = createLocalizedCatalog((): AutomationTempl
     ),
     prompt: translate(
       'auto.components.automations.automation.templates.weeklyReport.prompt',
-      'Write a concise, product-oriented weekly report from the Orca evidence provided with this run. Group work by product and cover the work, progress, MR merge status, CR or release status, risks, and next actions. Prioritize a1 results. Do not list uncommitted files or invent facts that the evidence does not support.'
+      "Use $a1-weekly-report to generate this week's report with the recommended emphasis and no interactive selection."
     ),
     preset: 'weekly',
     time: '17:00',

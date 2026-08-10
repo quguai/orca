@@ -360,7 +360,6 @@ describe('WorktreeCardStatusSlot', () => {
     expect(markup).toContain('Working')
     expect(markup).toContain('inline-flex size-5 items-center justify-center')
     expect(markup).toContain('border-yellow-500')
-    expect(markup).not.toContain('PR checks: Failed')
   })
 
   it('keeps permission activity ahead of PR status in new card style', () => {

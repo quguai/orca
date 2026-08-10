@@ -102,6 +102,45 @@ describe('OrcaRuntimeService automation methods', () => {
     expect(automation.id).toBe('auto-1')
   })
 
+  it('creates global automations without a project target', async () => {
+    const store = makeStore()
+    const runtime = new OrcaRuntimeService(store as never)
+
+    await runtime.createAutomation({
+      kind: 'global_task',
+      name: 'Weekly report',
+      prompt: 'Use $a1-weekly-report.',
+      agentId: 'codex',
+      rrule: 'FREQ=WEEKLY;BYDAY=FR',
+      dtstart: 1
+    })
+
+    expect(store.createAutomation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: 'global_task',
+        projectId: '',
+        runContext: undefined,
+        workspaceMode: 'new_per_run',
+        workspaceId: null
+      })
+    )
+  })
+
+  it('requires a project when changing a global automation to repo scope', async () => {
+    const globalAutomation = {
+      ...existingAutomation,
+      kind: 'global_task' as const,
+      projectId: ''
+    }
+    const store = makeStore([globalAutomation])
+    const runtime = new OrcaRuntimeService(store as never)
+
+    await expect(runtime.updateAutomation('auto-1', { kind: 'agent_task' })).rejects.toThrow(
+      'Automation requires --repo or --workspace.'
+    )
+    expect(store.updateAutomation).not.toHaveBeenCalled()
+  })
+
   it('updates and deletes existing automations through the shared store', async () => {
     const store = makeStore([existingAutomation])
     const runtime = new OrcaRuntimeService(store as never)

@@ -85,6 +85,24 @@ function makeRuntimeStatus(overrides: Partial<RuntimeStatus> = {}): RuntimeStatu
 }
 
 describe('automation target availability', () => {
+  it('allows projectless global automations in the floating workspace', () => {
+    expect(
+      getAutomationTargetAvailability({
+        automation: makeAutomation({
+          kind: 'global_task',
+          projectId: '',
+          runContext: null,
+          workspaceMode: 'new_per_run',
+          workspaceId: null
+        }),
+        repo: null,
+        workspace: null,
+        projectHostSetups: [],
+        sshConnectionStates: new Map()
+      })
+    ).toEqual({ canRunNow: true, reason: 'available', message: null })
+  })
+
   it('allows local automations with an available existing workspace', () => {
     expect(
       getAutomationTargetAvailability({
