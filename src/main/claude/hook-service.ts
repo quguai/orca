@@ -64,6 +64,11 @@ function getManagedScript(
     return [
       '@echo off',
       'setlocal',
+      // Why: refresh endpoint coordinates for PTYs surviving an Orca restart.
+      'if defined ORCA_AGENT_HOOK_ENDPOINT if exist "%ORCA_AGENT_HOOK_ENDPOINT%" call "%ORCA_AGENT_HOOK_ENDPOINT%" 2>nul',
+      // Why (#11549): the env guards must outrank the Devin skip — the Devin skip parks in more.com,
+      // and outside an Orca pane the caller can abandon stdin, so more.com never returns.
+      ...buildWindowsHookEnvironmentGuardLines(),
       ...(options.skipWhenDevinImportsClaude
         ? [
             // Why: Devin imports .claude hooks by default; skip Orca's managed hook there so status posts stay attributed to Devin.
@@ -73,11 +78,7 @@ function getManagedScript(
       // Why: refresh endpoint coordinates for PTYs surviving an Orca restart.
       'if defined ORCA_AGENT_HOOK_ENDPOINT if exist "%ORCA_AGENT_HOOK_ENDPOINT%" call "%ORCA_AGENT_HOOK_ENDPOINT%" 2>nul',
       ...buildWindowsHookEnvironmentGuardLines(),
-      // Why: post via curl.exe, not a second PowerShell. Claude's launcher is
-      // already an encoded PowerShell command (Git Bash needs it to survive
-      // spaces); a PowerShell post on top of that meant two interpreter
-      // startups per hook. The post runs inside the .cmd (cmd.exe context), so
-      // curl works the same here as for the POSIX/Codex hooks.
+      // Why: post via curl.exe, not a second PowerShell.
       buildWindowsAgentHookCurlPostCommand(hookSource),
       'exit /b 0',
       ...buildWindowsHookStdinDrainEpilogue(),

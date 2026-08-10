@@ -161,14 +161,20 @@ export function RepoIconGlyph({
   /** When set and no icon is chosen, render an initial-letter tile instead of the Folder fallback. */
   fallbackLabel?: string
 }): React.JSX.Element {
-  if (repoIcon?.type === 'image') {
+  const imageSrc = repoIcon?.type === 'image' ? repoIcon.src : null
+  // Why: private-mode GHES avatars need a session cookie, so the load fails and would
+  // render blank — track the failed src so a different icon still renders.
+  const [failedImageSrc, setFailedImageSrc] = React.useState<string | null>(null)
+
+  if (imageSrc !== null && failedImageSrc !== imageSrc) {
     return (
       <span className={cn('inline-flex items-center justify-center overflow-hidden', className)}>
         <img
-          src={repoIcon.src}
+          src={imageSrc}
           alt=""
           className={cn('size-full object-contain', iconClassName)}
           draggable={false}
+          onError={() => setFailedImageSrc(imageSrc)}
         />
       </span>
     )
@@ -180,7 +186,9 @@ export function RepoIconGlyph({
         className={cn('inline-flex items-center justify-center leading-none', className)}
         aria-hidden="true"
       >
-        <span className={cn('text-[0.9em]', iconClassName)}>{repoIcon.emoji}</span>
+        <span className={cn('inline-flex items-center justify-center text-[0.9em]', iconClassName)}>
+          {repoIcon.emoji}
+        </span>
       </span>
     )
   }

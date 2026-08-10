@@ -201,6 +201,8 @@ export type WorktreeSlice = {
       linkedLocalTask?: string | null
       linkedWorkItem?: WorkspaceLinkedItem | null
       linkedTaskSourceContext?: TaskSourceContext | null
+      /** Lets the owning runtime launch and prefill a task agent without first creating an idle shell. */
+      startupDraft?: string
     },
     linkedCodeMR?: number | null
   ) => Promise<CreateWorktreeResult>

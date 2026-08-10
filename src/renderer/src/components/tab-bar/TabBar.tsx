@@ -496,6 +496,9 @@ function TabBarInner({
   const queueTerminalTabFocusAfterNewTabMenuClose = (tabId: string): void => {
     pendingNewTabMenuFocusRef.current = () => focusTerminalTabSurface(tabId)
   }
+  const queueFocusAfterNewTabMenuClose = (focus: () => void): void => {
+    pendingNewTabMenuFocusRef.current = focus
+  }
   const windowsShellEntries = useMemo(() => {
     if (!showWindowsShellMenu || !onNewTerminalWithShell) {
       return undefined
@@ -1318,6 +1321,7 @@ function TabBarInner({
                 }}
                 onOpenEntry={onOpenEntry}
                 onQueryChange={setCreateMenuQuery}
+                onQueueSwitchFocus={queueFocusAfterNewTabMenuClose}
                 onSelectMenuOption={handleSelectCreateMenuOption}
                 onDidOpenEntry={() => setNewTabMenuOpen(false)}
               />

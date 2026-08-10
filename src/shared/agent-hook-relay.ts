@@ -46,6 +46,7 @@ const AGENT_HOOK_SOURCES = [
   'cursor',
   'pi',
   'omp',
+  'prime-agent',
   'droid',
   'command-code',
   'grok',
