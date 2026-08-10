@@ -3,6 +3,7 @@ import { safeStorage } from 'electron'
 export const PROTECTED_SECRET_SLOT = {
   opencodeSessionCookie: 'settings.opencodeSessionCookie',
   httpProxyUrl: 'settings.httpProxyUrl',
+  zaiApiKey: 'settings.zaiApiKey',
   browserKagiSessionLink: 'ui.browserKagiSessionLink'
 } as const
 

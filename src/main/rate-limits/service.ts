@@ -1695,23 +1695,29 @@ export class RateLimitService {
             networkProxySettings: this.networkProxySettingsResolver?.(),
             signal
           }),
-        fetchGeminiRateLimits(geminiCliOAuthEnabled),
-        fetchOpenCodeGoRateLimits(
-          cookie,
-          workspaceIdOverride || undefined,
-          this.networkProxySettingsResolver?.()
-        ),
-        this.fetchKimiWithResolvedHome(),
-        fetchZaiRateLimits(zaiApiKey),
-        fetchIdealabRateLimits(idealabUsageEnabled),
-        miniMaxConfigResult.error
-          ? Promise.resolve(this.getMiniMaxCredentialError(miniMaxConfigResult.error))
-          : fetchMiniMaxRateLimits({
-              cookie: miniMaxCookie,
-              groupId: miniMaxGroupId,
-              models: miniMaxModels
-            })
-      ])
+      missingWslCodexHome ??
+        fetchCodexRateLimits({
+          codexHomePath,
+          allowPtyFallback: this.shouldAllowCodexPtyFallback(),
+          signal
+        }),
+      fetchGeminiRateLimits(geminiCliOAuthEnabled),
+      fetchOpenCodeGoRateLimits(
+        cookie,
+        workspaceIdOverride || undefined,
+        this.networkProxySettingsResolver?.()
+      ),
+      this.fetchKimiWithResolvedHome(),
+      fetchZaiRateLimits(zaiApiKey),
+      fetchIdealabRateLimits(idealabUsageEnabled),
+      miniMaxConfigResult.error
+        ? Promise.resolve(this.getMiniMaxCredentialError(miniMaxConfigResult.error))
+        : fetchMiniMaxRateLimits({
+            cookie: miniMaxCookie,
+            groupId: miniMaxGroupId,
+            models: miniMaxModels
+          })
+    ])
 
     if (signal.aborted) {
       return

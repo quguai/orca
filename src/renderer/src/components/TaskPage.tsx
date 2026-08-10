@@ -4439,7 +4439,6 @@ export default function TaskPage(): React.JSX.Element {
   )
   const linearAttributeFilterReadRef = useRef<LinearIssueListFilterRead | null>(null)
   const linearPrimaryTeamRef = useRef<LinearPrimaryTeamObservation | null>(null)
-  const previousLinearWorkspaceIdForFiltersRef = useRef<string | null | undefined>(undefined)
   const [linearViewMode, setLinearViewMode] = useState<LinearViewMode>(DEFAULT_LINEAR_VIEW_MODE)
   const [linearGroupBy, setLinearGroupBy] = useState<LinearGroupBy>(DEFAULT_LINEAR_GROUP_BY)
   const [githubGroupBy, setGithubGroupBy] = useState<GitHubGroupBy>('repo')

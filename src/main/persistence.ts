@@ -3069,7 +3069,10 @@ export class Store {
           )
         }
         if (parsed.settings?.zaiApiKey) {
-          parsed.settings.zaiApiKey = decrypt(parsed.settings.zaiApiKey)
+          parsed.settings.zaiApiKey = this.protectedSecrets.decrypt(
+            PROTECTED_SECRET_SLOT.zaiApiKey,
+            parsed.settings.zaiApiKey
+          )
         }
         if (parsed.settings?.httpProxyUrl) {
           const decryptedProxy = this.protectedSecrets.decryptWithStatus(
@@ -3991,7 +3994,10 @@ export class Store {
           PROTECTED_SECRET_SLOT.opencodeSessionCookie,
           this.state.settings.opencodeSessionCookie
         ),
-        zaiApiKey: encrypt(this.state.settings.zaiApiKey),
+        zaiApiKey: encryptToSentinel(
+          PROTECTED_SECRET_SLOT.zaiApiKey,
+          this.state.settings.zaiApiKey ?? ''
+        ),
         httpProxyUrl: encryptToSentinel(
           PROTECTED_SECRET_SLOT.httpProxyUrl,
           this.state.settings.httpProxyUrl ?? ''
