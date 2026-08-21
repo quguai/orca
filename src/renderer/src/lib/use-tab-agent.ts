@@ -20,7 +20,8 @@ import { resolveCompatibleAgentTypeForOwner } from '../../../shared/agent-title-
 import { resolveForegroundAgentForLaunch } from '../../../shared/agent-title-overrides'
 import { isOpenCodeNativeTitle } from '../../../shared/opencode-terminal-title'
 import { resolvePaneAgentOwner } from '../../../shared/pane-agent-owner'
-import type { TerminalTab, TuiAgent } from '../../../shared/types'
+import type { TerminalTab } from '../../../shared/terminal-tab-types'
+import type { TuiAgent } from '../../../shared/tui-agent'
 
 // A shell name or the tab's neutral default title (where inferred-interrupt reset parks it); blank titles are no evidence.
 function titleShowsNoAgent(title: string, defaultTitle?: string): boolean {
@@ -163,11 +164,11 @@ export function resolveTabAgentFromSignals(args: {
   // command boundaries; taken raw it outranks launchAgent and flips an OMP-owned
   // tab's icon between the two glyphs. Re-owning collapses the same-group read
   // onto the durable owner while a genuine cross-group process still stands.
-  const processAgent = args.processAgent
-    ? resolveSignalAgentForLaunchOwner(
-        resolveForegroundAgentForLaunch(launchAgent, args.processAgent),
-        owner
-      )
+  const reownedForeground = args.processAgent
+    ? resolveForegroundAgentForLaunch(launchAgent, args.processAgent)
+    : null
+  const processAgent = reownedForeground
+    ? resolveSignalAgentForLaunchOwner(reownedForeground, owner)
     : null
   // Identity-first precedence (see JSDoc): live hook > process > title > idle > sleeping > launch > sibling.
   return (

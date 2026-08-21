@@ -175,9 +175,9 @@ async function readIdealabCookiesFromKeychain(): Promise<string | null> {
   } catch (error) {
     const message =
       error && typeof error === 'object'
-        ? `${(error as { stderr?: unknown }).stderr ?? ''} ${
+        ? `${String((error as { stderr?: unknown }).stderr ?? '')} ${String(
             (error as { message?: unknown }).message ?? ''
-          }`.toLowerCase()
+          )}`.toLowerCase()
         : String(error).toLowerCase()
     if (message.includes('could not be found') || message.includes('not be found')) {
       return null

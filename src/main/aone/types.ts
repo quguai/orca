@@ -3,7 +3,7 @@
 // Keep these minimal — only fields the UI actually renders — and additive,
 // since a1 may grow its JSON surface without notice.
 
-export type A1WorkItemCategory = 'Req' | 'Bug' | 'Task' | 'Risk' | 'NodeflowNode' | string
+export type A1WorkItemCategory = 'Req' | 'Bug' | 'Task' | 'Risk' | 'NodeflowNode' | (string & {})
 
 export type A1WorkItem = {
   identifier: string
@@ -18,7 +18,7 @@ export type A1WorkItem = {
   gmtCreate?: string | null
 }
 
-export type A1MergeRequestState = 'opened' | 'closed' | 'merged' | string
+export type A1MergeRequestState = 'opened' | 'closed' | 'merged' | (string & {})
 
 export type A1MergeRequestUser = {
   id?: number | null
@@ -27,7 +27,7 @@ export type A1MergeRequestUser = {
 }
 
 export type A1MergeRequestCheckResult = {
-  total_check_result?: 'satisfied' | 'unsatisfied' | string | null
+  total_check_result?: 'satisfied' | 'unsatisfied' | (string & {}) | null
   satisfied_check_results?: readonly unknown[]
   unsatisfied_check_results?: readonly unknown[]
 }
@@ -76,7 +76,7 @@ export type A1MergeRequestComment = {
   line?: number | null
   outdated?: boolean | null
   parentId?: number | null
-  type?: 'inline' | 'global' | 'reply' | string | null
+  type?: 'inline' | 'global' | 'reply' | (string & {}) | null
 }
 
 export type A1MergeRequestDiffFile = {
@@ -93,7 +93,7 @@ export type A1MergeRequestDiffFile = {
 export type A1MergeRequestStatusBlocker = {
   type?: string | null
   message?: string | null
-  level?: 'error' | 'warning' | 'info' | string | null
+  level?: 'error' | 'warning' | 'info' | (string & {}) | null
 }
 
 export type A1MergeRequestStatus = {

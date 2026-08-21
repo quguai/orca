@@ -1,6 +1,6 @@
 import type { AutomationRun } from '../../../../shared/automations-types'
 import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../../shared/constants'
-import type { Worktree } from '../../../../shared/types'
+import type { Worktree } from '../../../../shared/worktree/types'
 import { translate } from '@/i18n/i18n'
 
 export type AutomationRunWorkspaceDisplay = {

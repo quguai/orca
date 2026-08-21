@@ -21,6 +21,7 @@ import {
   getBitbucketPullRequestForBranchOrThrow,
   getBitbucketRepoSlug
 } from '../bitbucket/client'
+import { createBitbucketPullRequest } from '../bitbucket/pull-request-creation'
 import {
   getGiteaPullRequest,
   getGiteaPullRequestForBranchOrThrow,
@@ -71,7 +72,7 @@ export type ForgeReviewByNumberInput = ForgeProviderRepositoryContext & { number
 export type ForgeProvider = {
   id: ForgeProviderId
   supportsReviewCreation: boolean
-  resolveRepository(context: ForgeProviderRepositoryContext): Promise<unknown | null>
+  resolveRepository(context: ForgeProviderRepositoryContext): Promise<unknown>
   getReviewForBranch(input: ForgeReviewForBranchInput): Promise<HostedReviewInfo | null>
   getReviewByNumber(input: ForgeReviewByNumberInput): Promise<HostedReviewInfo | null>
   createReview?(
@@ -204,7 +205,7 @@ const gitHubForgeProvider = {
 
 const bitbucketForgeProvider = {
   id: 'bitbucket',
-  supportsReviewCreation: false,
+  supportsReviewCreation: true,
   resolveRepository: (context) =>
     getBitbucketRepoSlug(
       context.repoPath,
@@ -231,7 +232,8 @@ const bitbucketForgeProvider = {
       ...hostedReviewExecutionArgs(input)
     )
     return pr ? mapBitbucketReview(pr) : null
-  }
+  },
+  createReview: createBitbucketPullRequest
 } satisfies ForgeProvider
 
 const azureDevOpsForgeProvider = {
@@ -301,10 +303,7 @@ const codeForgeProvider = {
   supportsReviewCreation: true,
   async resolveRepository(context) {
     const remoteUrl = getRemoteUrl(context.repoPath)
-    if (isAoneCodeRemoteUrl(remoteUrl)) {
-      return remoteUrl
-    }
-    return resolveAoneCodeRepoSlug(context.repoPath)
+    return isAoneCodeRemoteUrl(remoteUrl) ? remoteUrl : resolveAoneCodeRepoSlug(context.repoPath)
   },
   getReviewForBranch: getAoneForgeReviewForBranch,
   async getReviewByNumber(input) {

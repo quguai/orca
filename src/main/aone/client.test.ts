@@ -1,5 +1,4 @@
-import { describe, expect, it } from 'vitest'
-import { beforeEach, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { a1ExecJsonMock, gitExecFileAsyncMock, resolveDefaultBaseRefWithLocalGitMock } = vi.hoisted(
   () => ({

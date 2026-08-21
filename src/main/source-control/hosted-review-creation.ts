@@ -19,10 +19,13 @@ import {
 import { isA1Authenticated } from '../aone/client'
 import { isAzureDevOpsReviewCreationAuthenticated } from '../azure-devops/pull-request-creation'
 import { isGiteaReviewCreationAuthenticated } from '../gitea/pull-request-creation'
+import { isBitbucketReviewCreationAuthenticated } from '../bitbucket/pull-request-creation'
 import { getEnterpriseGitHubRepoSlug } from '../github/github-enterprise-repository'
+import { getRepoSlug } from '../github/client'
+import { isDefaultGitHubHost } from '../../shared/github/repository-identity-key'
 import { acquire, ghExecFileAsync, gitExecFileAsync, release } from '../github/gh-utils'
 import { isNoUpstreamError, normalizeGitErrorMessage } from '../../shared/git-remote-error'
-import type { GitUpstreamStatus } from '../../shared/types'
+import type { GitUpstreamStatus } from '../../shared/git-status-types'
 import { gitOptionalLocksDisabledEnv } from '../git/runner'
 import { parsePorcelainV1Records, type PorcelainV1Record } from '../git/porcelain-v1-records'
 import { findExistingWorktreeSymlinkPaths } from '../git/worktree-symlink-detection'
@@ -300,6 +303,14 @@ function reviewCopy(provider: HostedReviewProvider): {
       authInstruction: 'Run a1 auth login --buc'
     }
   }
+  if (provider === 'bitbucket') {
+    return {
+      shortLabel: 'PR',
+      reviewLabel: 'pull request',
+      providerName: 'Bitbucket',
+      authInstruction: 'Connect Bitbucket in Settings > Integrations'
+    }
+  }
   return {
     shortLabel: 'PR',
     reviewLabel: 'pull request',
@@ -325,6 +336,11 @@ async function isProviderAuthenticated(
   }
   if (provider === 'code') {
     return isA1Authenticated({ cwd: repoPath })
+  }
+  if (provider === 'bitbucket') {
+    // Why: falling through to the GitHub check made Create PR unusable for
+    // anyone with Bitbucket connected but no `gh auth login`.
+    return isBitbucketReviewCreationAuthenticated()
   }
   return isGitHubAuthenticated(repoPath, connectionId, options)
 }
@@ -534,12 +550,19 @@ export async function getHostedReviewCreationEligibility(
     : lookupFailed
       ? 'unavailable'
       : 'not_found'
+  const githubRepository =
+    provider === 'github'
+      ? await getRepoSlug(args.repoPath, args.connectionId, args).catch(() => null)
+      : null
   const baseResult = {
     provider,
     review: review ? { number: review.number, url: review.url } : null,
     reviewLookupOutcome,
     defaultBaseRef,
-    head: branch || null
+    head: branch || null,
+    ...(githubRepository && isDefaultGitHubHost(githubRepository.host)
+      ? { stackedCreationSupported: true }
+      : {})
   }
 
   if (!branch || branch === 'HEAD') {

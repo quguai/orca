@@ -36,6 +36,9 @@ export function resolveHostedReviewAuthInstruction(provider: HostedReviewProvide
   if (provider === 'code') {
     return 'Run a1 auth login --buc'
   }
+  if (provider === 'bitbucket') {
+    return 'Connect Bitbucket in Settings > Integrations'
+  }
   return 'Run gh auth login'
 }
 

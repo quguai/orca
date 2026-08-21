@@ -9,7 +9,8 @@ function statusDotClass(status: WorktreeCardPrDisplay['status']): string {
       return 'bg-amber-500'
     case 'success':
       return 'bg-emerald-500'
-    default:
+    case 'neutral':
+    case undefined:
       return 'bg-muted-foreground/40'
   }
 }

@@ -2,12 +2,19 @@
 
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
+import { fireEvent } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type * as ReactI18Next from 'react-i18next'
 import { useAppStore } from '@/store'
 import type { AppState } from '@/store/types'
 import WorktreeJumpPalette from './WorktreeJumpPalette'
 import { makeRepo, makeWorktree } from './worktree-jump-palette-test-fixtures'
+
+const { activateAndRevealWorktree } = vi.hoisted(() => ({
+  activateAndRevealWorktree: vi.fn(() => false)
+}))
+
+vi.mock('@/lib/worktree-activation', () => ({ activateAndRevealWorktree }))
 
 vi.mock('react-i18next', async (importOriginal) => {
   const actual = await importOriginal<typeof ReactI18Next>()
@@ -74,25 +81,40 @@ vi.mock('@/components/ui/command', async () => {
         </div>
       ) : null
     },
-    CommandInput: ({
-      value,
-      onValueChange,
-      placeholder
-    }: {
-      value?: string
-      onValueChange?: (next: string) => void
-      placeholder?: string
-    }) => {
+    Command: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+    CommandGroup: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+    CommandInput: React.forwardRef(function CommandInput(
+      {
+        value,
+        onValueChange,
+        placeholder,
+        onClick,
+        onSelect,
+        onKeyDown
+      }: {
+        value?: string
+        onValueChange?: (next: string) => void
+        placeholder?: string
+        onClick?: React.MouseEventHandler<HTMLInputElement>
+        onSelect?: React.ReactEventHandler<HTMLInputElement>
+        onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>
+      },
+      ref: React.ForwardedRef<HTMLInputElement>
+    ) {
       setCommandQuery = onValueChange ?? null
       return (
         <input
+          ref={ref}
           data-command-input="true"
           placeholder={placeholder}
           value={value}
           onChange={(event) => onValueChange?.(event.currentTarget.value)}
+          onClick={onClick}
+          onSelect={onSelect}
+          onKeyDown={onKeyDown}
         />
       )
-    },
+    }),
     CommandList: React.forwardRef(function CommandList(
       { children }: { children: React.ReactNode },
       ref: React.ForwardedRef<HTMLDivElement>
@@ -159,7 +181,7 @@ async function renderPalette(overrides: Partial<AppState>): Promise<void> {
 }
 
 function getWorktreeRows(): string[] {
-  return [...testContainer.querySelectorAll<HTMLElement>('[data-command-item^="worktree:"]')].map(
+  return [...testContainer.querySelectorAll<HTMLElement>('[data-command-item*="worktree:"]')].map(
     (node) => node.textContent ?? ''
   )
 }
@@ -168,6 +190,7 @@ describe('WorktreeJumpPalette', () => {
   beforeEach(() => {
     globalThis.IS_REACT_ACT_ENVIRONMENT = true
     setCommandQuery = null
+    activateAndRevealWorktree.mockClear()
     useAppStore.setState(initialAppState, true)
     testContainer = document.createElement('div')
     document.body.appendChild(testContainer)
@@ -336,5 +359,80 @@ describe('WorktreeJumpPalette', () => {
     await flushEffects()
 
     expect(testContainer.textContent).toContain('Feature workspace')
+  })
+
+  // STA-4343 closed: two workspaces sharing `repoId::path` across hosts are two distinct
+  // rows. The documents map and worktreeMap are keyed by host identity, so each row resolves
+  // to its OWN worktree, and render keys keep the two apart for React and cmdk.
+  it('routes activation to each row own host when two same-id rows collide', async () => {
+    const local = makeWorktree('shared', 'Local workspace', { hostId: 'local' })
+    const ssh = makeWorktree('shared', 'SSH workspace', { hostId: 'ssh:box' })
+    const state = {
+      worktreesByRepo: { 'repo-1': [local, ssh] },
+      showSleepingWorkspaces: true
+    }
+
+    await renderPalette(state)
+
+    // Both rows render; the second carries a disambiguated command value so the two never
+    // share a React key.
+    const rows = testContainer.querySelectorAll<HTMLButtonElement>(
+      '[data-command-item$="worktree:shared"]'
+    )
+    expect(rows).toHaveLength(2)
+    expect([...rows].map((candidate) => candidate.getAttribute('data-command-item'))).toEqual([
+      'worktree:shared',
+      'palette-dup:1:worktree:shared'
+    ])
+
+    // The first row names ITS OWN host — the wrong-host open is gone.
+    await act(async () => fireEvent.click(rows[0]!))
+    expect(activateAndRevealWorktree).toHaveBeenLastCalledWith('shared', {
+      executionHostId: 'local'
+    })
+  })
+
+  // Why a separate render: activating closes the palette, so the sibling row is detached
+  // before a second click in the same test could reach it.
+  it('routes the second same-id row to the other host', async () => {
+    const local = makeWorktree('shared', 'Local workspace', { hostId: 'local' })
+    const ssh = makeWorktree('shared', 'SSH workspace', { hostId: 'ssh:box' })
+
+    await renderPalette({
+      worktreesByRepo: { 'repo-1': [local, ssh] },
+      showSleepingWorkspaces: true
+    })
+
+    const rows = testContainer.querySelectorAll<HTMLButtonElement>(
+      '[data-command-item$="worktree:shared"]'
+    )
+    expect(rows).toHaveLength(2)
+
+    await act(async () => fireEvent.click(rows[1]!))
+    expect(activateAndRevealWorktree).toHaveBeenLastCalledWith('shared', {
+      executionHostId: 'ssh:box'
+    })
+  })
+
+  it('keeps a lone host-qualified row on its clean command value', async () => {
+    const ssh = makeWorktree('single', 'SSH workspace', { hostId: 'ssh:box' })
+
+    await renderPalette({ worktreesByRepo: { 'repo-1': [ssh] }, showSleepingWorkspaces: true })
+
+    expect(
+      testContainer.querySelector('[data-command-item="worktree:single"]')?.textContent
+    ).toContain('SSH workspace')
+  })
+
+  it('replaces a completed emoji shortcode in the search query', async () => {
+    await renderPalette({ worktreesByRepo: { 'repo-1': [] } })
+    const input = testContainer.querySelector<HTMLInputElement>('[data-command-input="true"]')
+    expect(input).not.toBeNull()
+
+    await act(async () => {
+      fireEvent.change(input!, { target: { value: ':wink:', selectionStart: 6 } })
+    })
+
+    expect(input?.value).toBe('😉')
   })
 })

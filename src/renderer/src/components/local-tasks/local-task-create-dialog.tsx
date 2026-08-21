@@ -47,7 +47,7 @@ export function LocalTaskCreateDialog({
       description: string
       labelIds: string[]
     }
-  ) => void
+  ) => void | Promise<void>
   onCreateLabel: (name: string, color: string) => void
   onUpdateLabel: (id: string, name: string, color: string) => void
   onDeleteLabel: (id: string) => void

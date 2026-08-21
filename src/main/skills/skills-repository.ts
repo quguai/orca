@@ -85,7 +85,7 @@ export class SkillsRepository {
   async upsertSkill(record: SkillRecord): Promise<CentralSkill> {
     const store = await this.load()
     const idx = store.skills.findIndex((s) => s.id === record.id)
-    if (idx >= 0) {
+    if (idx !== -1) {
       store.skills[idx] = record
     } else {
       store.skills.push(record)
@@ -166,7 +166,7 @@ export class SkillsRepository {
 
     const existing = skill.targets.findIndex((t) => t.tool === toolKey)
     const entry = { tool: toolKey, status: result.success ? 'synced' : 'error' }
-    if (existing >= 0) {
+    if (existing !== -1) {
       skill.targets[existing] = entry
     } else {
       skill.targets.push(entry)
@@ -268,7 +268,7 @@ export class SkillsRepository {
       }
 
       const existingIdx = store.skills.findIndex((s) => s.name === entry.name)
-      if (existingIdx >= 0) {
+      if (existingIdx !== -1) {
         store.skills[existingIdx].centralPath = dirPath
       } else {
         store.skills.push(createLocalRecord(entry.name, dirPath, await hashDirectory(dirPath)))

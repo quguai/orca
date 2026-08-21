@@ -243,9 +243,10 @@ export async function launchAgentBackgroundSession(
       // Why: seed working because Command Code has no prompt-start hook for hidden launches.
       const routing = agentStatusConsumer.resolveRouting()
       if (routing) {
+        const observation = agentStatusConsumer.observeLaunchIngress()
         store.setAgentStatus(
           paneKey,
-          { state: 'working', prompt: trimmedPrompt, agentType: agent },
+          { state: 'working', prompt: trimmedPrompt, agentType: agent, observation },
           undefined,
           undefined,
           routing,

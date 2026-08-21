@@ -1,11 +1,17 @@
-import type { Tab, TerminalTab } from './types'
+import type { Tab } from './tab-types'
+import type { TerminalTab } from './terminal-tab-types'
 import { normalizeCompatibleAgentTitleForOwner } from './agent-title-owner'
 import { isMeaningfulOpenCodeTerminalTitle } from './opencode-terminal-title'
 
 export function resolveTerminalTabTitle(
   tab: Pick<
     TerminalTab,
-    'customTitle' | 'quickCommandLabel' | 'aiVaultTitle' | 'generatedTitle' | 'title' | 'launchAgent'
+    | 'customTitle'
+    | 'quickCommandLabel'
+    | 'aiVaultTitle'
+    | 'generatedTitle'
+    | 'title'
+    | 'launchAgent'
   >,
   generatedTitlesEnabled: boolean,
   fallback = ''

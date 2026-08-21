@@ -1,10 +1,8 @@
-import { getLinearOrganizationUrlKeyFromIssueUrl } from '../linear-links'
-import type {
-  CreateWorktreeArgs,
-  FolderWorkspaceLinkedTask,
-  JiraIssue,
-  LinearIssue
-} from '../types'
+import { getLinearOrganizationUrlKeyFromIssueUrl } from '../linear/links'
+import type { FolderWorkspaceLinkedTask } from '../folder-workspace-types'
+import type { JiraIssue } from '../jira-types'
+import type { LinearIssue } from '../linear/issue-types'
+import type { CreateWorktreeArgs } from '../worktree/create-types'
 import {
   getLinkedWorkItemSuggestedName,
   getLinkedWorkItemWorkspaceName,

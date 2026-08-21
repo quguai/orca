@@ -4,7 +4,7 @@
 // Kept separate from gh-shape-mappers.ts so the mapping primitives stay
 // pure functions while the I/O lives here.
 
-import { getMergeRequest, getMergeRequestForBranch } from './client'
+import { getMergeRequest, getMergeRequestForBranch, isAoneCodeRemoteUrl } from './client'
 import {
   closeMergeRequest,
   listMergeRequestComments,
@@ -14,7 +14,6 @@ import {
 } from './task-client'
 import { A1Error } from './a1-runner'
 import { mapA1CommentsToPRComments, mapA1MergeRequestToPRInfo } from './gh-shape-mappers'
-import { isAoneCodeRemoteUrl } from './client'
 import type { GitHubPullRequestStateUpdate, PRComment, PRInfo } from '../../shared/types'
 import type { CodeReviewProviderAdapter } from '../ipc/code-provider-bridge'
 

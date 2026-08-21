@@ -98,8 +98,6 @@ function activityDescription(activity: LocalTaskActivity): string {
         'auto.components.LocalTaskActivityComments.activity_unarchived',
         'Task unarchived'
       )
-    default:
-      return activity.type
   }
 }
 

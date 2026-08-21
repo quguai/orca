@@ -66,6 +66,7 @@ export type {
   LocalPtySessionMetadata,
   PtyBufferSnapshot,
   PtyConnectResult,
+  PtyReplayDataMeta,
   PtyTransport
 } from './pty-transport-types'
 export { extractLastOscTitle } from '../../../../shared/agent-detection'
@@ -107,6 +108,9 @@ type ProcessPtyOutputOptions = {
   clearBeforeReplay?: boolean
   // Why: a mid-escape tail; the replay consumer writes it LAST (after the post-replay reset) so the next live chunk completes it, not renders it literally (#7329).
   pendingEscapeTailAnsi?: string
+  /** Kitty flags the snapshot owner proved at `snapshotSeq`. */
+  kittyKeyboardFlags?: number
+  snapshotSeq?: number
 }
 
 type PendingPtySideEffect = {
@@ -502,7 +506,13 @@ export function createPtyOutputProcessor({
         ...(options.clearBeforeReplay === false ? { clearBeforeReplay: false } : {}),
         ...(options.pendingEscapeTailAnsi
           ? { pendingEscapeTailAnsi: options.pendingEscapeTailAnsi }
-          : {})
+          : {}),
+        // Why forwarded together: the flags are only valid for the boundary the
+        // image describes, so they never travel without their sequence.
+        ...(options.kittyKeyboardFlags !== undefined
+          ? { kittyKeyboardFlags: options.kittyKeyboardFlags }
+          : {}),
+        ...(options.snapshotSeq !== undefined ? { snapshotSeq: options.snapshotSeq } : {})
       }
       // Why: preserve the bare-data call shape when there's no replay metadata, so eager-buffer replay (which passes none) is unchanged.
       if (Object.keys(replayMeta).length > 0) {
@@ -556,6 +566,7 @@ export function createIpcPtyTransport(opts: IpcPtyTransportOptions = {}): PtyTra
     env,
     envToDelete,
     command,
+    commandDelivery,
     launchConfig,
     resumeProviderSession,
     launchToken,
@@ -588,9 +599,17 @@ export function createIpcPtyTransport(opts: IpcPtyTransportOptions = {}): PtyTra
   // unread marks, or notifications for unrelated worktrees just because Orca
   // is reconnecting background terminals on launch.
   let suppressAttentionEvents = false
+  let storedCallbacks: Parameters<PtyTransport['connect']>[0]['callbacks'] = {}
   const inputWriteQueue = createPtyInputWriteQueue({
     isWritable: (id) => connected && ptyId === id,
-    write: (id, data) => window.api.pty.write(id, data)
+    write: (id, data) => window.api.pty.write(id, data),
+    // Guard like the registered writeUnavailable handler: a rebind during the async drain
+    // must not tell the new pane that its write failed.
+    onDrainFailure: (id) => {
+      if (ptyId === id) {
+        storedCallbacks.onWriteUnavailable?.()
+      }
+    }
   })
   const outputProcessor = createPtyOutputProcessor({
     onTitleChange,
@@ -605,8 +624,6 @@ export function createIpcPtyTransport(opts: IpcPtyTransportOptions = {}): PtyTra
     onAgentStatus,
     getLaunchAgent: () => activeLaunchAgent
   })
-  let storedCallbacks: Parameters<PtyTransport['connect']>[0]['callbacks'] = {}
-
   // Why: a new pane can attach to the same ptyId before the old instance's detach() runs; track owned handlers so unregister never deletes the live one.
   const ownedDataAndReplayHandlers = new Map<
     string,
@@ -816,6 +833,9 @@ export function createIpcPtyTransport(opts: IpcPtyTransportOptions = {}): PtyTra
             ? { envToDelete: options.envToDelete ?? envToDelete }
             : {}),
           command: options.command ?? command,
+          ...((options.commandDelivery ?? commandDelivery)
+            ? { commandDelivery: options.commandDelivery ?? commandDelivery }
+            : {}),
           ...((options.launchConfig ?? launchConfig)
             ? { launchConfig: options.launchConfig ?? launchConfig }
             : {}),
@@ -900,6 +920,15 @@ export function createIpcPtyTransport(opts: IpcPtyTransportOptions = {}): PtyTra
             snapshot: spawnResult.snapshot,
             snapshotCols: spawnResult.snapshotCols,
             snapshotRows: spawnResult.snapshotRows,
+            ...(spawnResult.snapshotPrefixAnsi !== undefined
+              ? { snapshotPrefixAnsi: spawnResult.snapshotPrefixAnsi }
+              : {}),
+            ...(spawnResult.snapshotFrameAnsi !== undefined
+              ? { snapshotFrameAnsi: spawnResult.snapshotFrameAnsi }
+              : {}),
+            ...(spawnResult.snapshotFrameRestoreAnsi !== undefined
+              ? { snapshotFrameRestoreAnsi: spawnResult.snapshotFrameRestoreAnsi }
+              : {}),
             isAlternateScreen: spawnResult.isAlternateScreen,
             sessionExpired: spawnResult.sessionExpired,
             coldRestore: spawnResult.coldRestore,
@@ -1064,7 +1093,7 @@ export function createIpcPtyTransport(opts: IpcPtyTransportOptions = {}): PtyTra
       if (!connected || !ptyId) {
         return false
       }
-      return inputWriteQueue.enqueue(ptyId, data)
+      return inputWriteQueue.enqueueQueryReply(ptyId, data)
     },
 
     ...(connectionId

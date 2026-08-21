@@ -13,14 +13,9 @@ import type {
   PRMergeableState,
   PRState
 } from '../../shared/types'
-import type {
-  A1MergeRequest,
-  A1MergeRequestComment,
-  A1MergeRequestState,
-  A1MergeRequestStatus
-} from './types'
+import type { A1MergeRequest, A1MergeRequestComment, A1MergeRequestStatus } from './types'
 
-function mapA1State(state: A1MergeRequestState | string | undefined): PRState {
+function mapA1State(state: string | undefined): PRState {
   if (state === 'merged') {
     return 'merged'
   }

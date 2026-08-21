@@ -20,7 +20,8 @@ export type DiscoveredSkill = {
   directoryPath: string
   skillFilePath: string
   installed: boolean
-  fileCount: number
+  /** File count for skill-library snapshots; absent on hosts that do not report it. */
+  fileCount?: number
   updatedAt: number | null
 }
 
@@ -59,7 +60,8 @@ export type SkillDiscoverySource = {
   /** Agent that owns this root; null is the explicit shared-skills scope. */
   owner: AgentType | null
   exists: boolean
-  skippedReason?: 'missing' | 'remote-repo'
+  /** `unavailable`: the root did not answer in time, so its skills are unknown rather than absent. */
+  skippedReason?: 'missing' | 'remote-repo' | 'unavailable'
 }
 
 export type SkillDiscoveryResult = {
@@ -77,6 +79,9 @@ export type SkillDiscoveryTarget = {
    *  when the caller (e.g. a remote client) cannot supply `projectRuntime`. */
   worktreeId?: string | null
   projectRuntime?: ProjectExecutionRuntimeResolution
+  /** Bypass the host's shared scans because the caller knows disk just changed.
+   *  Optional so an older host simply ignores it and scans as it always did. */
+  refresh?: boolean
 }
 
 const ResolvedProjectRuntimeSchema = z.object({
@@ -126,7 +131,8 @@ export const SkillDiscoveryTargetSchema: z.ZodType<SkillDiscoveryTarget> = z.obj
   worktreeId: z.string().nullable().optional(),
   projectRuntime: z
     .discriminatedUnion('status', [ResolvedProjectRuntimeSchema, RepairProjectRuntimeSchema])
-    .optional()
+    .optional(),
+  refresh: z.boolean().optional()
 })
 
 export type SkillFrontmatterSummary = {

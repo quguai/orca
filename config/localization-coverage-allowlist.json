@@ -1,13 +1,6 @@
 [
   {
-    "filePath": "src/renderer/src/lib/agent-background-session-test-state.ts",
-    "kind": "object-property:title",
-    "text": "Terminal 1",
-    "dynamic": false,
-    "count": 1
-  },
-  {
-    "filePath": "src/renderer/src/components/sidebar/WorktreeCard.tsx",
+    "filePath": "src/renderer/src/components/sidebar/worktree-card-meta-row.tsx",
     "kind": "jsx-attribute:label",
     "text": "sidebar",
     "dynamic": false,
@@ -73,6 +66,335 @@
     "filePath": "src/renderer/src/components/settings/terminal-pane-appearance-search.ts",
     "kind": "object-property:keywords",
     "text": "ghostty",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/aone/AoneTaskList.tsx",
+    "kind": "jsx-expression",
+    "text": "Item",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/local-tasks/local-task-markdown-editor.tsx",
+    "kind": "jsx-text",
+    "text": "&middot;",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/local-tasks/local-task-sub-header.tsx",
+    "kind": "object-property:label",
+    "text": "List",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/local-tasks/local-task-sub-header.tsx",
+    "kind": "object-property:label",
+    "text": "Board",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/SkillCard.tsx",
+    "kind": "jsx-expression",
+    "text": "No description",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/SkillDetailPanel.tsx",
+    "kind": "jsx-expression",
+    "text": "Skill",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/SkillDetailPanel.tsx",
+    "kind": "jsx-text",
+    "text": "Skill detail drawer",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/SkillDetailPanel.tsx",
+    "kind": "jsx-text",
+    "text": "branch:",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/SkillDetailPanel.tsx",
+    "kind": "jsx-attribute:label",
+    "text": "SKILL.md",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/SkillsMySkillsTab.tsx",
+    "kind": "jsx-expression",
+    "text": "Source",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/SkillsPage.tsx",
+    "kind": "object-property:label",
+    "text": "Dashboard",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/SkillsPage.tsx",
+    "kind": "object-property:label",
+    "text": "My Skills",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/SkillsPage.tsx",
+    "kind": "object-property:label",
+    "text": "Install",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/SkillsPage.tsx",
+    "kind": "object-property:label",
+    "text": "Workspaces",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/SyncDots.tsx",
+    "kind": "jsx-attribute:title",
+    "text": "more",
+    "dynamic": true,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/install-git-section.tsx",
+    "kind": "user-visible-call",
+    "text": "Installed",
+    "dynamic": true,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/install-git-section.tsx",
+    "kind": "user-visible-call",
+    "text": "skill",
+    "dynamic": true,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/install-git-section.tsx",
+    "kind": "user-visible-call",
+    "text": "Install failed",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/install-git-section.tsx",
+    "kind": "jsx-attribute:placeholder",
+    "text": "https://github.com/user/repo.git",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/install-git-section.tsx",
+    "kind": "jsx-text",
+    "text": "Preview",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/install-git-section.tsx",
+    "kind": "jsx-text",
+    "text": "skill",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/install-git-section.tsx",
+    "kind": "jsx-text",
+    "text": "found",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/install-local-section.tsx",
+    "kind": "user-visible-call",
+    "text": "No new local skills found",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/install-local-section.tsx",
+    "kind": "user-visible-call",
+    "text": "Imported",
+    "dynamic": true,
+    "count": 2
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/install-local-section.tsx",
+    "kind": "user-visible-call",
+    "text": "skill",
+    "dynamic": true,
+    "count": 2
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/install-local-section.tsx",
+    "kind": "user-visible-call",
+    "text": "Scan failed",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/install-local-section.tsx",
+    "kind": "user-visible-call",
+    "text": "Imported successfully",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/install-local-section.tsx",
+    "kind": "user-visible-call",
+    "text": "Import failed",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/install-local-section.tsx",
+    "kind": "user-visible-call",
+    "text": "Batch import failed",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/install-market-section.tsx",
+    "kind": "object-property:label",
+    "text": "Hot",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/install-market-section.tsx",
+    "kind": "object-property:label",
+    "text": "Trending",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/install-market-section.tsx",
+    "kind": "object-property:label",
+    "text": "All Time",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/install-market-section.tsx",
+    "kind": "user-visible-call",
+    "text": "Installed",
+    "dynamic": true,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/install-market-section.tsx",
+    "kind": "user-visible-call",
+    "text": "Install failed",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/skills-view-constants.ts",
+    "kind": "object-property:label",
+    "text": "Local",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/skills-view-constants.ts",
+    "kind": "object-property:label",
+    "text": "Import",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/skills-view-constants.ts",
+    "kind": "object-property:label",
+    "text": "Git",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/skills-view-constants.ts",
+    "kind": "object-property:label",
+    "text": "skills.sh",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/skills-view-constants.ts",
+    "kind": "object-property:label",
+    "text": "Memory",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/skills-view-constants.ts",
+    "kind": "object-property:label",
+    "text": "Up to date",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/skills-view-constants.ts",
+    "kind": "object-property:label",
+    "text": "Update available",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/skills-view-constants.ts",
+    "kind": "object-property:label",
+    "text": "Unknown",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/skills-view-constants.ts",
+    "kind": "object-property:label",
+    "text": "Checking...",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/skills-view-constants.ts",
+    "kind": "object-property:label",
+    "text": "Updating...",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/skills-view-constants.ts",
+    "kind": "object-property:label",
+    "text": "Error",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/skills-view-constants.ts",
+    "kind": "object-property:label",
+    "text": "Local only",
+    "dynamic": false,
+    "count": 1
+  },
+  {
+    "filePath": "src/renderer/src/components/skills/skills-view-constants.ts",
+    "kind": "object-property:label",
+    "text": "Source missing",
     "dynamic": false,
     "count": 1
   }

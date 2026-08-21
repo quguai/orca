@@ -3,7 +3,8 @@ import { homedir } from 'node:os'
 import type { Store } from '../persistence'
 import type { Automation } from '../../shared/automations-types'
 import type { WorkspaceRunContext } from '../../shared/task-source-context'
-import type { ProjectHostSetup, Repo } from '../../shared/types'
+import type { ProjectHostSetup } from '../../shared/project-types'
+import type { Repo } from '../../shared/repo-types'
 import { resolveAutomationRunTarget } from './run-target-resolution'
 
 function makeRepo(overrides: Partial<Repo> = {}): Repo {

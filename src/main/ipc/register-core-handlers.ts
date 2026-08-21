@@ -8,9 +8,7 @@ import type { StatsCollector } from '../stats/collector'
 import { registerFilesystemHandlers } from './filesystem'
 import type { CommitMessageAgentEnvironmentResolvers } from '../text-generation/commit-message-agent-environment'
 import { registerFilesystemWatcherHandlers } from './filesystem-watcher'
-import { registerClaudeUsageHandlers } from './claude-usage'
-import { registerCodexUsageHandlers } from './codex-usage'
-import { registerOpenCodeUsageHandlers } from './opencode-usage'
+import { registerUsageProviderHandlers } from './usage-provider-handlers'
 import { registerGitHubHandlers } from './github'
 import { registerGitLabHandlers } from './gitlab'
 import { registerHostedReviewHandlers } from './hosted-review'
@@ -18,6 +16,7 @@ import { registerLinearHandlers } from './linear'
 import { registerJiraHandlers } from './jira'
 import { registerAoneHandlers } from './aone'
 import { registerLocalTaskHandlers } from './local-tasks'
+import { registerBitbucketHandlers } from './bitbucket'
 import { registerFeedbackHandlers } from './feedback'
 import { registerCrashReportingHandlers } from './crash-reporting'
 import { registerExportHandlers } from './export'
@@ -36,11 +35,8 @@ import { registerDashboardPopoutHandlers } from './dashboard-popout'
 import { registerTerminalPreviewHandlers } from './terminal-preview'
 import { registerDeveloperPermissionHandlers } from './developer-permissions'
 import { registerComputerUsePermissionHandlers } from './computer-use-permissions'
-import {
-  setTrustedBrowserRendererWebContentsId,
-  setAgentBrowserBridgeRef,
-  registerBrowserHandlers
-} from './browser'
+import { setAgentBrowserBridgeRef, registerBrowserHandlers } from './browser'
+import { setTrustedBrowserRendererWebContentsId } from './browser-renderer-trust'
 import { registerSessionHandlers } from './session'
 import { registerSettingsHandlers } from './settings'
 import { registerDiagnosticsHandlers } from './diagnostics'
@@ -145,9 +141,7 @@ export function registerCoreHandlers(
   registerAppHandlers(store, { onBeforeRelaunch: lifecycleOptions.onBeforeRelaunch })
   registerCliHandlers()
   registerPreflightHandlers()
-  registerClaudeUsageHandlers(claudeUsage)
-  registerCodexUsageHandlers(codexUsage)
-  registerOpenCodeUsageHandlers(openCodeUsage)
+  registerUsageProviderHandlers({ claudeUsage, codexUsage, openCodeUsage })
   registerCodexAccountHandlers(codexAccounts, () => store.getSettings())
   registerAgentHookHandlers(runtime, { getPtyIdForPaneKey })
   registerCodexConfigSyncHandlers(codexAccounts.runtimeHomeService)
@@ -163,6 +157,7 @@ export function registerCoreHandlers(
   registerJiraHandlers()
   registerAoneHandlers()
   registerLocalTaskHandlers()
+  registerBitbucketHandlers()
   registerFeedbackHandlers()
   if (crashReports) {
     registerCrashReportingHandlers(crashReports)
@@ -184,7 +179,7 @@ export function registerCoreHandlers(
   registerTerminalRenderDesyncEvidenceHandler()
   registerComputerUsePermissionHandlers()
   registerSettingsHandlers(store, agentAwakeService)
-  registerSkillsHandlers(store)
+  registerSkillsHandlers(store, runtime)
   if (automations) {
     registerAutomationHandlers(store, automations)
   }

@@ -3,7 +3,7 @@ import { Bell, BookOpen, CalendarClock, EyeOff, Files, Search, Smartphone } from
 import { useTranslation } from 'react-i18next'
 import { useAppStore } from '@/store'
 import { cn } from '@/lib/utils'
-import type { GlobalSettings } from '../../../../shared/types'
+import type { GlobalSettings } from '../../../../shared/global-settings-types'
 import { useActivityUnreadCount } from '@/components/activity/useActivityUnreadCount'
 import { useShortcutKeyComboDetails } from '@/hooks/useShortcutLabel'
 import { ShortcutKeyCombo } from '@/components/ShortcutKeyCombo'
@@ -137,6 +137,35 @@ const SidebarNav = React.memo(function SidebarNav() {
           <HideSidebarMenu onHide={hideArtifactsButton} />
         </ContextMenu>
       ) : null}
+      {showSkillsButton ? (
+        <ContextMenu>
+          <ContextMenuTrigger asChild>
+            <button
+              type="button"
+              onClick={openSkillsPage}
+              aria-current={skillsActive ? 'page' : undefined}
+              className={cn(
+                'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] font-medium tracking-tight transition-colors',
+                skillsActive
+                  ? 'bg-worktree-sidebar-accent text-worktree-sidebar-accent-foreground'
+                  : 'text-worktree-sidebar-foreground/60 hover:bg-worktree-sidebar-foreground/8'
+              )}
+            >
+              <BookOpen
+                className={cn(
+                  'size-4 shrink-0',
+                  !skillsActive && 'text-worktree-sidebar-foreground/30'
+                )}
+                strokeWidth={skillsActive ? 2.25 : 1.75}
+              />
+              <span className="flex-1">
+                {translate('auto.components.sidebar.SidebarNav.skills', 'Skills')}
+              </span>
+            </button>
+          </ContextMenuTrigger>
+          <HideSidebarMenu onHide={hideSkillsButton} />
+        </ContextMenu>
+      ) : null}
       {showAutomationsButton ? (
         <ContextMenu>
           <ContextMenuTrigger asChild>
@@ -164,35 +193,6 @@ const SidebarNav = React.memo(function SidebarNav() {
             </button>
           </ContextMenuTrigger>
           <HideSidebarMenu onHide={hideAutomationsButton} />
-        </ContextMenu>
-      ) : null}
-      {showSkillsButton ? (
-        <ContextMenu>
-          <ContextMenuTrigger asChild>
-            <button
-              type="button"
-              onClick={openSkillsPage}
-              aria-current={skillsActive ? 'page' : undefined}
-              className={cn(
-                'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] font-medium tracking-tight transition-colors',
-                skillsActive
-                  ? 'bg-worktree-sidebar-accent text-worktree-sidebar-accent-foreground'
-                  : 'text-worktree-sidebar-foreground/60 hover:bg-worktree-sidebar-foreground/8'
-              )}
-            >
-              <BookOpen
-                className={cn(
-                  'size-4 shrink-0',
-                  !skillsActive && 'text-worktree-sidebar-foreground/30'
-                )}
-                strokeWidth={skillsActive ? 2.25 : 1.75}
-              />
-              <span className="flex-1">
-                {translate('auto.components.sidebar.SidebarNav.0bdf53d7ce', 'Skills')}
-              </span>
-            </button>
-          </ContextMenuTrigger>
-          <HideSidebarMenu onHide={hideSkillsButton} />
         </ContextMenu>
       ) : null}
       {showAgentDashboardButton ? (
