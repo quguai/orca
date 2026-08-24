@@ -81,6 +81,7 @@ import {
   createWorktreeVisibilitySourceMatcher,
   resolveCustomWorktreeVisibilitySources
 } from '../../shared/worktree/visibility-sources'
+import { resolveConfiguredWorktreeBasePaths } from '../../shared/worktree/configured-worktree-base-path'
 import {
   assertWorktreeCleanForRemoval,
   forceDeleteLocalBranch,
@@ -885,7 +886,8 @@ function buildDetectedGitWorktrees(
   )
   const worktreeVisibilitySourceMatcher = createWorktreeVisibilitySourceMatcher(
     [repo.path, ...liveWorktrees.map((worktree) => worktree.path)],
-    resolveCustomWorktreeVisibilitySources(repo, settings.worktreeVisibilityDefaults)
+    resolveCustomWorktreeVisibilitySources(repo, settings.worktreeVisibilityDefaults),
+    resolveConfiguredWorktreeBasePaths(repo)
   )
   const detected = liveWorktrees.map((gitWorktree) => {
     const worktreeId = `${repo.id}::${gitWorktree.path}`
@@ -1039,7 +1041,8 @@ function buildFolderDetectedWorktrees(store: Store, repo: Repo): DetectedWorktre
   const worktrees = listFolderWorkspaces(store, repo)
   const worktreeVisibilitySourceMatcher = createWorktreeVisibilitySourceMatcher(
     [repo.path, ...worktrees.map((worktree) => worktree.path)],
-    resolveCustomWorktreeVisibilitySources(repo, settings.worktreeVisibilityDefaults)
+    resolveCustomWorktreeVisibilitySources(repo, settings.worktreeVisibilityDefaults),
+    resolveConfiguredWorktreeBasePaths(repo)
   )
   return worktrees.map((worktree) =>
     toDetectedWorktree({
@@ -1126,7 +1129,8 @@ function buildDisconnectedDetectedWorktrees(
   const settings = store.getSettings()
   const worktreeVisibilitySourceMatcher = createWorktreeVisibilitySourceMatcher(
     [repo.path, ...worktrees.map((worktree) => worktree.path)],
-    resolveCustomWorktreeVisibilitySources(repo, settings.worktreeVisibilityDefaults)
+    resolveCustomWorktreeVisibilitySources(repo, settings.worktreeVisibilityDefaults),
+    resolveConfiguredWorktreeBasePaths(repo)
   )
   const detected = worktrees.map((worktree) => {
     const meta = store.getWorktreeMeta(worktree.id)

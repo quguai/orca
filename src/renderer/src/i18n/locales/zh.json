@@ -2777,6 +2777,14 @@
             "5c8ce20be6": "如果这种情况持续存在，请",
             "cc6d997c65": "从此处重新启动终端守护进程以清除失效的守护进程状态。"
           },
+          "TerminalProcessExitOverlay": {
+            "capacityTitle": "已达到 Git Bash 控制台上限",
+            "capacityDetail": "Git Bash 已达到 128 个控制台的上限。关闭未使用的 Git Bash 终端，然后重新启动此终端。",
+            "failedTitle": "终端已退出",
+            "failedDetail": "Shell 进程以退出代码 {{code}} 结束。输出已保留。",
+            "close": "关闭",
+            "restart": "重新启动"
+          },
           "TerminalPane": {
             "ac112e9036": "删除标题",
             "f984ab2a30": "删除窗格标题：{{value0}}",
@@ -5103,6 +5111,12 @@
           "9f2d4c8b17": "永久隐藏 {{value0}} 的外部工作树",
           "5e1b8d3f62": "永久隐藏外部工作树",
           "c3e8a1f4b2": "不再显示"
+        },
+        "NoticeHostGlyph": {
+          "hostDisconnected": "{{hostName}} 已断开连接",
+          "sshHostProject": "SSH 主机 {{hostName}} 上的项目",
+          "localHostProject": "此主机上的项目",
+          "runtimeHostProject": "{{hostName}} 上的项目"
         },
         "newExternalWorktreesInboxActions": {
           "a11c2f6d89": "无法保持外部工作树隐藏。请重试。",
@@ -13348,7 +13362,12 @@
           "5d2c3e7ae3": "未检测到语音。"
         },
         "DictationIndicator": {
-          "335e1bc6cb": "停止听写"
+          "335e1bc6cb": "停止听写",
+          "7f3660a7ba": "正在启动麦克风…",
+          "f082d0cb9d": "正在处理…",
+          "3de5a129e7": "正在聆听",
+          "4977162383": "音量过大",
+          "25f2b7a6a5": "正在说话"
         }
       },
       "dashboard": {
@@ -13662,7 +13681,13 @@
           "3e3b2c369f": "cron",
           "e81a02d61b": "保存前输入有效的五字段 cron。",
           "968e66d686": "输入一个五字段 cron。",
-          "cadb7b0bc9": "无效的"
+          "cadb7b0bc9": "无效的",
+          "f6ca30da23": "有效的自定义 cron",
+          "a226dbdd40": "分钟",
+          "ec9c1e35df": "小时",
+          "2d82246d23": "日",
+          "0e1de0358b": "月",
+          "77e96bded6": "星期"
         },
         "AutomationDetail": {
           "007c8ad874": "提示词",
@@ -13988,6 +14013,16 @@
               "description": "跨仓库拉取所有等待你评审的合并请求（经 a1），按优先级分类汇总，不限定单个项目。",
               "name": "每日评审清单",
               "prompt": "你是代码评审分诊助手。本次任务不限定某个仓库，而是覆盖所有等待我评审的合并请求。步骤：① 执行 `a1 repo mr list --mine review --state opened --format json` 获取待评审 MR；② 按需用 `a1 repo mr status --source <分支>`、`a1 repo mr view <id> --work-items --cr` 补充 CI/审批/冲突/关联信息；③ 分类：阻塞中（CI 失败、冲突、未解决 BLOCKER）、等我回复（@我 或 QUESTION）、可合并（审批通过且 CI 绿）、停滞（多日无更新）；④ 用中文输出简洁清单：仓库、标题、MR 链接、当前状态、建议下一步。不要改动代码或 MR 状态。若返回认证错误，提示执行 `a1 auth login --buc`。"
+            }
+          },
+          "schedule": {
+            "label": {
+              "a95afb7483": "每小时 :{{minute}}",
+              "280ccd2701": "每天 {{time}}",
+              "3f1422adc1": "工作日 {{time}}",
+              "cc71e252ba": "每{{day}} {{time}}",
+              "ba20c92073": "自定义日程",
+              "086a5a9fe2": "无效日程"
             }
           }
         },
@@ -14666,6 +14701,16 @@
     },
     "workspace": {
       "cleanup": {
+        "browse": {
+          "selectionWithheldOne": "当前筛选条件隐藏了 1 个已选工作区，已取消选择。",
+          "selectionWithheld": "当前筛选条件隐藏了 {{value0}} 个已选工作区，已取消选择。",
+          "selectAllCountOne": "选择 1 个通过安全检查的工作区",
+          "selectAllCount": "选择全部 {{value0}} 个通过安全检查的工作区"
+        },
+        "scan": {
+          "readyOne": "找到 1 个工作区。",
+          "readyMany": "找到 {{value0}} 个工作区。"
+        },
         "presentationFixtures": {
           "reviewAlphaCleanup": "评审 Alpha 清理"
         },
