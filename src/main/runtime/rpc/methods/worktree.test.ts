@@ -148,6 +148,33 @@ describe('worktree RPC methods', () => {
     })
   })
 
+  it('keeps the legacy CLI name-only create shape explicit at the host boundary', async () => {
+    const runtime = {
+      getRuntimeId: () => 'test-runtime',
+      dedupeWorktreeCreate: passthroughDedupe,
+      showRepo: vi.fn().mockResolvedValue(repo),
+      createManagedWorktree: vi.fn().mockResolvedValue({ worktree: { id: 'wt-cli' } })
+    } as unknown as OrcaRuntimeService
+    const dispatcher = new RpcDispatcher({ runtime, methods: WORKTREE_METHODS })
+
+    await dispatcher.dispatch(
+      makeRequest('worktree.create', {
+        repo: 'repo-1',
+        name: 'feature',
+        cliProvenanceRequest: {}
+      })
+    )
+
+    expect(runtime.createManagedWorktree).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'feature',
+        displayName: undefined,
+        displayNameKind: undefined,
+        cliProvenance: expect.objectContaining({ kind: 'created-by-cli' })
+      })
+    )
+  })
+
   it('forwards startup command and env to runtime worktree creation', async () => {
     const runtime = {
       getRuntimeId: () => 'test-runtime',

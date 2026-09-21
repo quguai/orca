@@ -133,7 +133,7 @@ MR 已合并不等于已发布。关联 CR 也只证明存在交付关联；只�
 
 ## 4. 读取 Orca 本地任务上下文
 
-按 `$orca-cli` 解析并固定本次会话的 CLI，把下方 `<ORCA>` 替换为真实命令，不要把 `ORCA` 当作字面命令或 shell 变量。
+按 `$orca-cli` 解析并固定本次会话的 CLI：`<ORCA>` 是占位符，代表 the executable you resolved in the stub（按 `$orca-cli` 的解析规则选定），把下方 `<ORCA>` 替换为真实命令，不要把 `ORCA` 当作字面命令或 shell 变量。
 
 ```text
 <ORCA> status --json

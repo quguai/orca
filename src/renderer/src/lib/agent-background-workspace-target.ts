@@ -1,5 +1,12 @@
 import { FLOATING_TERMINAL_WORKTREE_ID } from '../../../shared/constants'
 import type { Repo, Worktree } from '../../../shared/types'
+import type { useAppStore } from '@/store'
+import type { TuiAgent } from '../../../shared/tui-agent'
+import { requireTuiAgentConfig } from '../../../shared/require-tui-agent-config'
+import {
+  resolveAgentBackgroundLaunchHost,
+  type AgentBackgroundLaunchHost
+} from '@/lib/agent-background-session-launch-host'
 
 type AgentBackgroundWorkspaceTarget = {
   cwd: string
@@ -59,4 +66,43 @@ export async function resolveAgentBackgroundWorkspaceTarget({
       })
     : worktree!.path
   return { cwd, isFloatingWorkspace, repo, worktree: (worktree as Worktree | null) ?? null }
+}
+
+/** One resolution feeding the launch route, the trust write, and the spawn cwd. */
+export async function prepareAgentBackgroundWorkspace({
+  store,
+  worktreeId,
+  agent
+}: {
+  store: ReturnType<typeof useAppStore.getState>
+  worktreeId: string
+  agent: TuiAgent
+}): Promise<{
+  workspaceCwd: string
+  isFloatingWorkspace: boolean
+  launchHost: AgentBackgroundLaunchHost
+}> {
+  const {
+    cwd: workspaceCwd,
+    isFloatingWorkspace,
+    repo
+  } = await resolveAgentBackgroundWorkspaceTarget({
+    worktreeId,
+    worktrees: store.allWorktrees(),
+    knownWorktree: store.getKnownWorktreeById(worktreeId),
+    repos: store.repos,
+    floatingTerminalCwd: store.settings?.floatingTerminalCwd
+  })
+  const launchHost = resolveAgentBackgroundLaunchHost({
+    store,
+    worktreeId,
+    worktreePath: workspaceCwd,
+    repo
+  })
+  await markAgentBackgroundWorkspaceTrusted(
+    requireTuiAgentConfig(agent).preflightTrust,
+    workspaceCwd,
+    launchHost.connectionId
+  )
+  return { workspaceCwd, isFloatingWorkspace, launchHost }
 }

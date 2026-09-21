@@ -8,7 +8,8 @@ import { cn } from '@/lib/utils'
 import type { PRComment } from '../../../../shared/types'
 import type { AoneWorkspaceMergeRequestEntry } from './AoneWorkspaceMergeRequests'
 import { classifyAoneFailure, mapAoneMergeRequestState } from './aone-review-normalization'
-import { PRCommentsList, prStateColor } from './checks-panel-content'
+import { PRCommentsList } from './checks-panel/comments-list'
+import { prStateColor } from './checks-panel/check-presentation'
 import { ChecksPanelUpdatedAtMetadata } from './checks-panel-updated-at-metadata'
 
 type AoneComment = {

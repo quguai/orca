@@ -42,6 +42,12 @@ import type {
   SkillUpdateStartResult
 } from '../../shared/skill-freshness'
 
+import type {
+  SkillDeletePlan,
+  SkillDeleteRequest,
+  SkillDeleteResult
+} from '../../shared/skill-delete-contract'
+
 export type SkillsApi = {
   discover: (target?: SkillDiscoveryTarget) => Promise<SkillDiscoveryResult>
   listSaved: () => Promise<SavedSkill[]>
@@ -52,7 +58,8 @@ export type SkillsApi = {
   removePreset: (args: { presetId: string }) => Promise<void>
   list: () => Promise<CentralSkill[]>
   getDocument: (args: { skillId: string }) => Promise<string | null>
-  delete: (args: { skillId: string }) => Promise<void>
+  /** Central-repo delete; `delete` below is the on-disk discovered-skill flow. */
+  deleteCentral: (args: { skillId: string }) => Promise<void>
   installLocal: (args: { path: string; name?: string }) => Promise<CentralSkill>
   installGit: (args: { url: string }) => Promise<CentralSkill>
   installFromMarketplace: (args: { source: string; name: string }) => Promise<CentralSkill>
@@ -103,6 +110,12 @@ export type SkillsApi = {
     input: SkillBundleInstallPreviewInput
   ) => Promise<SkillBundleInstallPreviewOperation>
   removeInstall: (input: SkillRemoveInput) => Promise<SkillRemoveOperation>
+  /** Whether the host answering `previewDelete`/`delete` supports them. Always
+   *  true on desktop; on web the "local" host is a remote server that updates
+   *  independently and may predate the capability. */
+  deleteSupported: () => Promise<boolean>
+  previewDelete: (request: SkillDeleteRequest) => Promise<SkillDeletePlan>
+  delete: (request: SkillDeleteRequest) => Promise<SkillDeleteResult>
   listManagedInstalls: (environmentId?: string) => Promise<ManagedSkillInstallListOperation>
   getPackage: (packageId: string) => Promise<SkillCloudOperation<SkillCloudPackageDetails>>
   listOwnedShares: () => Promise<SkillCloudOperation<SkillCloudOwnedShare[]>>

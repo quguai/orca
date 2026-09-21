@@ -1,19 +1,22 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import { TerminalTabLeadingIcon } from './TerminalTabLeadingIcon'
 import type { TerminalTabActivityStatus } from './terminal-tab-activity-status'
 
 /** Render one activity status through the production leading-icon component. */
 function renderStatus(status: TerminalTabActivityStatus): string {
   return renderToStaticMarkup(
-    <TerminalTabLeadingIcon
-      agent="codex"
-      activityStatus={status}
-      activityPhaseKey="terminal-tab-1"
-      shell={undefined}
-      showUnreadActivity={false}
-      isActive={false}
-    />
+    <TooltipProvider>
+      <TerminalTabLeadingIcon
+        agent="codex"
+        activityStatus={status}
+        activityPhaseKey="terminal-tab-1"
+        shell={undefined}
+        showUnreadActivity={false}
+        isActive={false}
+      />
+    </TooltipProvider>
   )
 }
 

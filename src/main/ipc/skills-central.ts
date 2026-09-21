@@ -36,7 +36,8 @@ export function registerCentralSkillsHandlers(_store: Store): void {
     }
   )
 
-  ipcMain.handle('skills:delete', async (_event, args: { skillId: string }): Promise<void> => {
+  // Why: 'skills:deleteCentral' not 'skills:delete' — the skill-delete flow owns that channel.
+  ipcMain.handle('skills:deleteCentral', async (_event, args: { skillId: string }): Promise<void> => {
     await repo.deleteSkill(args.skillId)
   })
 

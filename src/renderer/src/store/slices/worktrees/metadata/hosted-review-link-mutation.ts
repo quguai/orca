@@ -7,6 +7,11 @@ import { branchName } from '@/lib/git-utils'
 import type { Worktree } from '../../../../../../shared/worktree/types'
 import type { WorktreeMeta } from '../../../../../../shared/worktree/meta-types'
 import { applyDetectedWorktreeUpdates } from '../listing/detected-worktree-meta'
+import {
+  hostedReviewLinkWorktreeIdAliases,
+  pruneHostedReviewLinkWorktreeAliasesForId,
+  resolveHostedReviewLinkWorktreeId
+} from './hosted-review-link-worktree-aliases'
 import type {
   HostedReviewLinkKey,
   RuntimeWorktreeMetaUpdates
@@ -39,7 +44,11 @@ export const hostedReviewLinkClearTombstonesByWorktreeId = new Map<
   string,
   { branch: string; branchIdentity: string; generation: number; head?: string }
 >()
-export const hostedReviewLinkWorktreeIdAliases = new Map<string, string>()
+
+export {
+  getHostedReviewLinkWorktreeAliasCountForTests,
+  resolveHostedReviewLinkWorktreeId
+} from './hosted-review-link-worktree-aliases'
 
 export function hasHostedReviewLinks(worktree: Worktree): boolean {
   return HOSTED_REVIEW_LINK_KEYS.some((key) => worktree[key] != null)
@@ -51,6 +60,13 @@ export function hasBranchScopedHostedReviewContext(worktree: Worktree): boolean 
 
 export function hasHostedReviewLinkUpdates(updates: Partial<WorktreeMeta>): boolean {
   return HOSTED_REVIEW_LINK_KEYS.some((key) => key in updates) || 'pushTarget' in updates
+}
+
+export function hasChangedHostedReviewLinkUpdates(
+  updates: Partial<WorktreeMeta>,
+  worktree: Worktree
+): boolean {
+  return HOSTED_REVIEW_LINK_KEYS.some((key) => key in updates && updates[key] !== worktree[key])
 }
 
 export function getHostedReviewLinkMutationGeneration(worktreeId: string): number {
@@ -75,32 +91,6 @@ export function pruneHostedReviewLinkMutationGenerations(worktreeIds: Iterable<s
       if (newWorktreeId === worktreeId) {
         hostedReviewLinkWorktreeIdAliases.delete(oldWorktreeId)
       }
-    }
-  }
-}
-
-export function resolveHostedReviewLinkWorktreeId(worktreeId: string): string {
-  let current = worktreeId
-  const seen = new Set<string>()
-  while (!seen.has(current)) {
-    seen.add(current)
-    const next = hostedReviewLinkWorktreeIdAliases.get(current)
-    if (!next) {
-      return current
-    }
-    current = next
-  }
-  return worktreeId
-}
-
-export function pruneHostedReviewLinkWorktreeAliasesForId(worktreeId: string): void {
-  for (const [alias, target] of Array.from(hostedReviewLinkWorktreeIdAliases)) {
-    if (
-      alias === worktreeId ||
-      target === worktreeId ||
-      resolveHostedReviewLinkWorktreeId(alias) === worktreeId
-    ) {
-      hostedReviewLinkWorktreeIdAliases.delete(alias)
     }
   }
 }
@@ -138,10 +128,6 @@ export function migrateHostedReviewLinkMutationGeneration(
 
 export function getHostedReviewLinkMutationGenerationForTests(worktreeId: string): number {
   return getHostedReviewLinkMutationGeneration(worktreeId)
-}
-
-export function getHostedReviewLinkWorktreeAliasCountForTests(): number {
-  return hostedReviewLinkWorktreeIdAliases.size
 }
 
 export function resetHostedReviewLinkMutationGenerationForTests(): void {
@@ -257,7 +243,7 @@ export function applyHostedReviewLinkClear(
       nextWorktrees === s.worktreesByRepo &&
       nextDetectedWorktrees === s.detectedWorktreesByRepo
     ) {
-      return {}
+      return s
     }
     return {
       ...(nextWorktrees !== s.worktreesByRepo

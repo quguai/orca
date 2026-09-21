@@ -117,6 +117,8 @@ describe('mergeRuntimeFolderWorkspace', () => {
       linkedBitbucketPR: null,
       linkedAzureDevOpsPR: null,
       linkedGiteaPR: null,
+      linkedCodeMR: null,
+      linkedLocalTask: null,
       linkedWorkItem: null,
       linkedTaskSourceContext: null,
       isArchived: false,

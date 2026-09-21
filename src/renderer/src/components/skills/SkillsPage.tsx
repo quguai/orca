@@ -1,176 +1,412 @@
-import { Download, LayoutDashboard, Library, FolderOpen, X } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
-import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { useMountedRef } from '@/hooks/useMountedRef'
-import { translate } from '@/i18n/i18n'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Share2, Trash2 } from 'lucide-react'
+import { readIpcErrorDetail } from '@/lib/ipc-error'
+import { cn } from '@/lib/utils'
 import { useAppStore } from '@/store'
-import type { CentralSkill, ToolInfo } from '../../../../shared/skills'
-import { SkillsDashboardTab } from './SkillsDashboardTab'
-import { SkillsInstallTab } from './SkillsInstallTab'
-import { SkillsMySkillsTab } from './SkillsMySkillsTab'
-import { SkillsWorkspacesTab } from './SkillsWorkspacesTab'
-import type { SkillsPageTab } from './skills-page-tabs'
+import { discoverSkillsForRuntimeTarget } from '@/runtime/runtime-skills-client'
+import type { RuntimeClientTarget } from '@/runtime/runtime-rpc-client'
+import { useActiveSkillDiscoveryRuntimeTarget } from '@/hooks/use-active-skill-discovery-runtime-target'
+import { useMountedRef } from '@/hooks/useMountedRef'
+import type { DiscoveredSkill, SkillDiscoveryResult } from '../../../../shared/skills'
+import { MAX_SKILL_DELETE_BATCH } from '../../../../shared/skill-delete-contract'
+import { SkillsList } from './SkillsList'
+import { SkillShareDialog } from './SkillShareDialog'
+import { SkillInstallDialog } from './SkillInstallDialog'
+import { SkillInstallManagementDialog } from './SkillInstallManagementDialog'
+import { SkillsPageHeader } from './SkillsPageHeader'
+import { SkillsFilterToolbar } from './SkillsFilterToolbar'
+import { SkillsSelectionHeader } from './SkillsSelectionHeader'
+import {
+  SkillsEmptyState,
+  SkillsListSkeleton,
+  SkillsNoMatchesState,
+  SkillsRemoteShareNotice,
+  SkillsScanErrorBand
+} from './skills-page-states'
+import { SKILLS_PAGE_COLUMN } from './skills-page-column'
+import { scannedSkillSourceCount, summarizeSkillSources } from './skill-source-inventory'
+import { useSkillDiscoveryHostLabel } from './use-skill-discovery-host-label'
+import { countSkillsBySource, filterSkills, type SkillsFilterState } from './skills-filter'
+import { skillAgentByRootPath, skillAgentOptions } from './skill-agent-filter'
+import { SkillSharedLinksView } from './SkillSharedLinksView'
+import { useOwnedSkillShares } from './use-owned-skill-shares'
+import type { SkillsPageView } from './skills-page-view'
+import { useSkillsPageKeyboardNavigation } from './use-skills-page-keyboard-navigation'
+import { translate } from '@/i18n/i18n'
+import {
+  INSTALLED_AGENT_SKILLS_CHANGED_EVENT,
+  INSTALLED_AGENT_SKILLS_REFRESHED_EVENT
+} from '@/hooks/installed-agent-skills-change-event'
+import {
+  addShareableSkillResults,
+  eligibleShareSkillCount,
+  retainedShareableSkillSelection,
+  updatedSkillSelection
+} from './skill-share-selection'
+import {
+  addDeletableSkillResults,
+  eligibleDeleteSkillCount,
+  retainedDeletableSkillSelection
+} from './skill-delete-selection'
+import { skillDeleteActionLabel } from './skill-delete-copy'
+import { shareSelectionActionLabel } from './skill-display-labels'
+import { SkillDeleteResultBand } from './SkillDeleteResultBand'
+import { useSkillDeleteFlow } from './use-skill-delete-flow'
 
-const TAB_ITEMS: {
-  id: SkillsPageTab
-  label: string
-  icon: React.ComponentType<{ className?: string }>
-}[] = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'my-skills', label: 'My Skills', icon: Library },
-  { id: 'install', label: 'Install', icon: Download },
-  { id: 'workspaces', label: 'Workspaces', icon: FolderOpen }
-]
+const EMPTY_SKILLS: DiscoveredSkill[] = []
+const NO_FILTERS: SkillsFilterState = {
+  query: '',
+  sourceKind: 'all',
+  agent: 'all'
+}
+
+type SkillScanState = {
+  runtimeTarget: RuntimeClientTarget
+  result: SkillDiscoveryResult | null
+  error: { detail?: string } | null
+}
 
 export default function SkillsPage(): React.JSX.Element {
-  const mountedRef = useMountedRef()
-  const activeTab = useAppStore((s) => s.skillsViewActiveTab)
-  const setActiveTab = useAppStore((s) => s.setSkillsViewActiveTab)
-  const setActiveView = useAppStore((s) => s.setActiveView)
-  const [skills, setSkills] = useState<CentralSkill[]>([])
-  const [tools, setTools] = useState<ToolInfo[]>([])
+  const closeSkillsPage = useAppStore((s) => s.closeSkillsPage)
+  const pendingSkillShareId = useAppStore((s) => s.pendingSkillShareId)
+  const clearPendingSkillShare = useAppStore((s) => s.clearPendingSkillShare)
+  const pendingSkillsSharedView = useAppStore((s) => s.pendingSkillsSharedView)
+  const clearPendingSkillsSharedView = useAppStore((s) => s.clearPendingSkillsSharedView)
+  const runtimeTarget = useActiveSkillDiscoveryRuntimeTarget()
+  const hostLabel = useSkillDiscoveryHostLabel(runtimeTarget)
+  const [scanState, setScanState] = useState<SkillScanState | null>(null)
+  // Target identity changes on host switches and same-ID re-pairs.
+  const currentScan = scanState?.runtimeTarget === runtimeTarget ? scanState : null
+  const result = currentScan?.result ?? null
   const [loading, setLoading] = useState(true)
+  const scanError = currentScan?.error ?? null
+  const [shareSkills, setShareSkills] = useState<DiscoveredSkill[]>([])
+  const [selectionMode, setSelectionMode] = useState<'share' | 'delete' | null>(null)
+  const [selectedSkillIds, setSelectedSkillIds] = useState<Set<string>>(() => new Set())
+  const [installOpen, setInstallOpen] = useState(false)
+  const [installLink, setInstallLink] = useState('')
+  const [managementOpen, setManagementOpen] = useState(false)
+  const [filters, setFilters] = useState<SkillsFilterState>(NO_FILTERS)
+  const [view, setView] = useState<SkillsPageView>('skills')
+  const ownedShares = useOwnedSkillShares()
+  const mountedRef = useMountedRef()
+  const scanGenerationRef = useRef(0)
+  // Why a ref: `loadSkills` must not re-identify (and re-scan) when the user
+  // merely switches selection mode. Switching modes clears the selection anyway,
+  // so a one-render lag here cannot retain the wrong rows.
+  const selectionModeRef = useRef(selectionMode)
+  useEffect(() => {
+    selectionModeRef.current = selectionMode
+  }, [selectionMode])
 
-  const loadData = useCallback(async (): Promise<void> => {
-    setLoading(true)
-    try {
-      const [nextSkills, nextTools] = await Promise.all([
-        window.api.skills.list(),
-        window.api.skills.getToolsStatus()
-      ])
-      if (mountedRef.current) {
-        setSkills(nextSkills)
-        setTools(nextTools)
+  const loadSkills = useCallback(
+    async (refresh = false): Promise<void> => {
+      setLoading(true)
+      // Why: a cold local scan walks every skill root, so switching runtimes can
+      // land a stale result after a newer one. Only the newest scan may write.
+      const scanGeneration = ++scanGenerationRef.current
+      const isCurrentScan = (): boolean =>
+        mountedRef.current && scanGeneration === scanGenerationRef.current
+      if (!runtimeTarget) {
+        // Why: keep scanning until the owning runtime is known, rather than
+        // showing the client's skills to someone whose skills live remotely.
+        return
       }
-    } catch (error) {
-      console.error('Failed to load skills:', error)
-      if (mountedRef.current) {
-        toast.error(
-          translate('auto.components.skills.SkillsPage.ea72d6185b', 'Could not scan local skills')
+      try {
+        const nextResult = await discoverSkillsForRuntimeTarget(
+          runtimeTarget,
+          refresh ? { refresh: true } : undefined
         )
+        const local = runtimeTarget.kind === 'local'
+        if (isCurrentScan()) {
+          setScanState({ runtimeTarget, result: nextResult, error: null })
+          setSelectedSkillIds((current) =>
+            selectionModeRef.current === 'delete'
+              ? retainedDeletableSkillSelection(current, nextResult.skills)
+              : retainedShareableSkillSelection(current, nextResult.skills, local)
+          )
+        }
+      } catch (error) {
+        console.error('Failed to discover skills:', error)
+        if (isCurrentScan()) {
+          // Why: a failed scan needs to stay on screen with a retry — a toast
+          // disappears before the user can act on it.
+          setScanState((current) => ({
+            runtimeTarget,
+            result: current?.runtimeTarget === runtimeTarget ? current.result : null,
+            error: { detail: readIpcErrorDetail(error) }
+          }))
+        }
+      } finally {
+        if (isCurrentScan()) {
+          setLoading(false)
+        }
       }
-    } finally {
-      if (mountedRef.current) {
-        setLoading(false)
-      }
-    }
-  }, [mountedRef])
+    },
+    [mountedRef, runtimeTarget]
+  )
 
   useEffect(() => {
-    void loadData()
-  }, [loadData])
+    void loadSkills()
+  }, [loadSkills])
 
-  const handleDelete = useCallback(
-    async (skillId: string): Promise<void> => {
-      try {
-        await window.api.skills.delete({ skillId })
-        if (mountedRef.current) {
-          setSkills((prev) => prev.filter((s) => s.id !== skillId))
-          toast.success(translate('auto.components.skills.SkillsPage.deleted', 'Skill deleted'))
-        }
-      } catch {
-        toast.error(translate('auto.components.skills.SkillsPage.deleteFail', 'Failed to delete'))
-      }
-    },
-    [mountedRef]
+  useEffect(() => {
+    const refresh = (): void => void loadSkills()
+    window.addEventListener(INSTALLED_AGENT_SKILLS_CHANGED_EVENT, refresh)
+    return () => window.removeEventListener(INSTALLED_AGENT_SKILLS_CHANGED_EVENT, refresh)
+  }, [loadSkills])
+
+  useEffect(() => {
+    if (pendingSkillsSharedView) {
+      setView('shared')
+      setFilters(NO_FILTERS)
+      clearPendingSkillsSharedView()
+    }
+  }, [clearPendingSkillsSharedView, pendingSkillsSharedView])
+
+  useEffect(() => {
+    if (!pendingSkillShareId) {
+      return
+    }
+    setInstallLink(`https://app.orca.dev/skills/share/${pendingSkillShareId}`)
+    setInstallOpen(true)
+    clearPendingSkillShare()
+  }, [clearPendingSkillShare, pendingSkillShareId])
+
+  const exitSelection = useCallback((): void => {
+    setSelectionMode(null)
+    setSelectedSkillIds(new Set())
+  }, [])
+
+  const deleteFlow = useSkillDeleteFlow(runtimeTarget, hostLabel, () => {
+    exitSelection()
+    // Why an explicit refresh instead of firing the change event: this page
+    // would then run a second, non-refresh scan of the host it just refreshed.
+    // Other subscribers (settings badges, pickers) still hear the event.
+    void loadSkills(true)
+    window.dispatchEvent(new Event(INSTALLED_AGENT_SKILLS_REFRESHED_EVENT))
+  })
+
+  // Why: the search box is shared between the two lists, but a link query means
+  // nothing against skill names and vice versa.
+  const exitSharedLinks = useCallback((): void => {
+    setView('skills')
+    setFilters(NO_FILTERS)
+  }, [])
+
+  const openSharedLinks = useCallback((): void => {
+    setView('shared')
+    setFilters(NO_FILTERS)
+  }, [])
+
+  useSkillsPageKeyboardNavigation({
+    closeSkillsPage,
+    exitSelection,
+    exitSharedLinks,
+    selectionMode,
+    view
+  })
+
+  const skills = result?.skills ?? EMPTY_SKILLS
+  const local = runtimeTarget?.kind === 'local'
+  const agentByRootPath = useMemo(() => skillAgentByRootPath(result), [result])
+  const agentOptions = useMemo(() => skillAgentOptions(result), [result])
+  const visibleSkills = useMemo(
+    () => filterSkills(skills, filters, agentByRootPath),
+    [agentByRootPath, filters, skills]
   )
-
-  const handleSync = useCallback(
-    async (skillId: string, toolKey: string): Promise<void> => {
-      await window.api.skills.syncToTool({ skillId, toolKey })
-      void loadData()
-    },
-    [loadData]
-  )
-
-  const handleUnsync = useCallback(
-    async (skillId: string, toolKey: string): Promise<void> => {
-      await window.api.skills.unsyncFromTool({ skillId, toolKey })
-      void loadData()
-    },
-    [loadData]
-  )
-
-  const handleCheckUpdate = useCallback(
-    async (skillId: string): Promise<void> => {
-      const updated = await window.api.skills.checkUpdate({ skillId })
-      if (mountedRef.current) {
-        setSkills((prev) => prev.map((s) => (s.id === skillId ? updated : s)))
-      }
-    },
-    [mountedRef]
-  )
-
-  const handleCheckAllUpdates = useCallback(async (): Promise<void> => {
-    await window.api.skills.checkAllUpdates()
-    void loadData()
-  }, [loadData])
-
-  const skillCount = skills.length
+  const sourceCounts = useMemo(() => countSkillsBySource(skills), [skills])
+  const sourceEntries = useMemo(() => summarizeSkillSources(result), [result])
+  const eligibleCount =
+    selectionMode === 'delete'
+      ? eligibleDeleteSkillCount(visibleSkills)
+      : eligibleShareSkillCount(visibleSkills, local)
+  const deleting = selectionMode === 'delete'
+  const addSelected = (
+    current: ReadonlySet<string>,
+    results: readonly DiscoveredSkill[]
+  ): Set<string> =>
+    deleting
+      ? addDeletableSkillResults(current, skills, results)
+      : addShareableSkillResults(current, skills, results, local)
+  const openInstallDialog = (): void => {
+    setInstallLink('')
+    setInstallOpen(true)
+  }
 
   return (
-    <main className="flex min-h-0 flex-1 flex-col overflow-hidden bg-card">
-      <Tabs
-        value={activeTab}
-        onValueChange={(value) => setActiveTab(value as SkillsPageTab)}
-        className="flex min-h-0 flex-1 flex-col gap-0 overflow-hidden"
-      >
-        <div className="flex items-center justify-between border-b border-border/50 px-4 py-1.5">
-          <span className="text-xs font-medium text-foreground/70">
-            {translate('auto.components.skills.SkillsPage.f43ad6edf3', 'Skills')}
-            <span className="ml-2 text-foreground/40">{skillCount}</span>
-          </span>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setActiveView('terminal')}
-            className="size-7 shrink-0 text-foreground/60 hover:text-foreground"
-          >
-            <X className="size-4" />
-          </Button>
-        </div>
+    <main className="flex min-h-0 flex-1 flex-col bg-background">
+      {selectionMode ? (
+        <SkillsSelectionHeader
+          title={
+            deleting
+              ? translate(
+                  'auto.components.skills.SkillsSelectionHeader.deleteTitle',
+                  'Select skills to delete'
+                )
+              : translate(
+                  'auto.components.skills.SkillsSelectionHeader.title',
+                  'Select skills to share'
+                )
+          }
+          icon={
+            deleting ? (
+              <Trash2 className="size-4 shrink-0 text-muted-foreground" />
+            ) : (
+              <Share2 className="size-4 shrink-0 text-muted-foreground" />
+            )
+          }
+          actionIcon={deleting ? <Trash2 className="size-3.5" /> : <Share2 className="size-3.5" />}
+          actionLabel={
+            deleting
+              ? skillDeleteActionLabel(selectedSkillIds.size)
+              : shareSelectionActionLabel(selectedSkillIds.size)
+          }
+          destructive={deleting}
+          busy={deleting && deleteFlow.running}
+          selectedCount={selectedSkillIds.size}
+          eligibleCount={eligibleCount}
+          onSelectAll={() => setSelectedSkillIds((current) => addSelected(current, visibleSkills))}
+          onClear={() => setSelectedSkillIds(new Set())}
+          onCancel={exitSelection}
+          onSubmit={() => {
+            const selected = skills.filter((skill) => selectedSkillIds.has(skill.id))
+            if (deleting) {
+              void deleteFlow.requestDelete(selected)
+              return
+            }
+            setShareSkills(selected)
+          }}
+        />
+      ) : (
+        <SkillsPageHeader
+          skillCount={skills.length}
+          sourceEntries={sourceEntries}
+          scannedSourceCount={scannedSkillSourceCount(sourceEntries)}
+          hostLabel={hostLabel}
+          onClose={closeSkillsPage}
+          onStartShare={() => {
+            setSelectionMode('share')
+            setSelectedSkillIds(new Set())
+          }}
+          deleteSupported={deleteFlow.supported}
+          deleteUnsupportedReason={deleteFlow.unsupportedReason}
+          onStartDelete={() => {
+            setSelectionMode('delete')
+            setSelectedSkillIds(new Set())
+          }}
+          onInstallFromLink={openInstallDialog}
+          onManageInstalls={() => setManagementOpen(true)}
+          onOpenSharedLinks={openSharedLinks}
+        />
+      )}
+      <SkillsFilterToolbar
+        view={view}
+        filters={filters}
+        agentOptions={agentOptions}
+        sourceCounts={sourceCounts}
+        totalCount={skills.length}
+        resultCount={visibleSkills.length}
+        linkCount={ownedShares.shares.length}
+        loading={view === 'shared' ? ownedShares.loading : loading}
+        onViewChange={(next) => (next === 'shared' ? openSharedLinks() : exitSharedLinks())}
+        onFiltersChange={setFilters}
+        onRefresh={() => {
+          if (view === 'shared') {
+            ownedShares.refresh()
+            return
+          }
+          deleteFlow.reprobe()
+          void loadSkills()
+        }}
+      />
+      {scanError ? (
+        <SkillsScanErrorBand
+          detail={scanError.detail}
+          disabled={loading}
+          onRetry={() => {
+            deleteFlow.reprobe()
+            void loadSkills()
+          }}
+        />
+      ) : null}
+      {deleteFlow.result ? (
+        <SkillDeleteResultBand result={deleteFlow.result} onDismiss={deleteFlow.dismissResult} />
+      ) : null}
 
-        <div className="flex items-center gap-1 border-b border-border/50 px-4 py-2">
-          <TabsList className="h-auto justify-start gap-1 bg-transparent p-0">
-            {TAB_ITEMS.map(({ id, label, icon: Icon }) => (
-              <TabsTrigger
-                key={id}
-                value={id}
-                className="gap-1.5 rounded-md px-3 py-1.5 text-xs data-[state=active]:bg-accent data-[state=active]:shadow-none"
-              >
-                <Icon className="size-3.5" />
-                {label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
+      <section className="scrollbar-sleek min-h-0 flex-1 overflow-y-auto">
+        <div className={cn(SKILLS_PAGE_COLUMN, 'py-2')} data-skills-page-list="true">
+          {view === 'shared' ? (
+            <SkillSharedLinksView query={filters.query} shares={ownedShares} />
+          ) : (
+            <>
+              {hostLabel && !local ? <SkillsRemoteShareNotice hostLabel={hostLabel} /> : null}
+              {loading && skills.length === 0 ? (
+                <SkillsListSkeleton />
+              ) : visibleSkills.length > 0 ? (
+                <SkillsList
+                  skills={visibleSkills}
+                  allSkills={skills}
+                  local={local}
+                  agentByRootPath={agentByRootPath}
+                  selectedIds={selectedSkillIds}
+                  selectionMode={selectionMode}
+                  deleteSupported={deleteFlow.supported}
+                  deleteUnsupportedReason={deleteFlow.unsupportedReason}
+                  onSelectedChange={(skillId, selected) =>
+                    setSelectedSkillIds((current) =>
+                      updatedSkillSelection(
+                        current,
+                        skillId,
+                        selected,
+                        selectionMode === 'delete' ? MAX_SKILL_DELETE_BATCH : undefined
+                      )
+                    )
+                  }
+                  onSelectResults={(results) =>
+                    setSelectedSkillIds((current) => addSelected(current, results))
+                  }
+                  onShare={(skill) => setShareSkills([skill])}
+                  onDelete={(skill) => void deleteFlow.requestDelete([skill])}
+                />
+              ) : skills.length > 0 ? (
+                <SkillsNoMatchesState onClearFilters={() => setFilters(NO_FILTERS)} />
+              ) : result ? (
+                <SkillsEmptyState
+                  onRefresh={() => {
+                    deleteFlow.reprobe()
+                    void loadSkills()
+                  }}
+                  onInstallFromLink={openInstallDialog}
+                />
+              ) : null}
+            </>
+          )}
         </div>
+      </section>
 
-        <div className="min-h-0 flex-1 overflow-hidden">
-          <TabsContent value="dashboard" className="scrollbar-sleek m-0 h-full overflow-auto">
-            <SkillsDashboardTab skills={skills} tools={tools} onSelectTab={setActiveTab} />
-          </TabsContent>
-          <TabsContent value="my-skills" className="m-0 h-full overflow-hidden">
-            <SkillsMySkillsTab
-              skills={skills}
-              tools={tools}
-              loading={loading}
-              onDelete={handleDelete}
-              onSyncToTool={handleSync}
-              onUnsyncFromTool={handleUnsync}
-              onCheckUpdate={handleCheckUpdate}
-              onCheckAllUpdates={handleCheckAllUpdates}
-            />
-          </TabsContent>
-          <TabsContent value="install" className="m-0 h-full overflow-hidden">
-            <SkillsInstallTab onSkillsChanged={loadData} />
-          </TabsContent>
-          <TabsContent value="workspaces" className="scrollbar-sleek m-0 h-full overflow-auto">
-            <SkillsWorkspacesTab skills={skills} tools={tools} />
-          </TabsContent>
-        </div>
-      </Tabs>
+      <SkillShareDialog
+        skills={shareSkills}
+        open={shareSkills.length > 0}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) {
+            setShareSkills([])
+            exitSelection()
+          }
+        }}
+      />
+      <SkillInstallDialog
+        key={installLink || 'manual-install'}
+        open={installOpen}
+        initialLink={installLink}
+        onOpenChange={(next) => {
+          setInstallOpen(next)
+          if (!next) {
+            setInstallLink('')
+          }
+        }}
+      />
+      <SkillInstallManagementDialog open={managementOpen} onOpenChange={setManagementOpen} />
     </main>
   )
 }

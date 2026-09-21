@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAppStore } from '@/store'
-import { isShellProcess } from '../../../shared/agent-detection'
-import { worktreeUsesRemoteConnection } from '@/store/slices/terminals'
-import { parseRemoteRuntimePtyId } from '@/runtime/runtime-terminal-stream'
+import { worktreeUsesRemoteConnection } from '@/store/terminals/terminal-workspace-routing'
+import { hasRemoteRuntimePtyForTab } from './tab-agent-remote-pty-selector'
 import { isTerminalLeafId, makePaneKey } from '../../../shared/stable-pane-id'
 import {
   resolveFocusedCompletedTabAgent,
@@ -22,12 +21,9 @@ import { isOpenCodeNativeTitle } from '../../../shared/opencode-terminal-title'
 import { resolvePaneAgentOwner } from '../../../shared/pane-agent-owner'
 import type { TerminalTab } from '../../../shared/terminal-tab-types'
 import type { TuiAgent } from '../../../shared/tui-agent'
+import { resolveLaunchedAgentExitEvidence, titleShowsNoAgent } from './tab-agent-exit-evidence'
 
-// A shell name or the tab's neutral default title (where inferred-interrupt reset parks it); blank titles are no evidence.
-function titleShowsNoAgent(title: string, defaultTitle?: string): boolean {
-  const trimmed = title.trim()
-  return trimmed.length > 0 && (isShellProcess(trimmed) || trimmed === defaultTitle?.trim())
-}
+export { resolveLaunchedAgentExitEvidence } from './tab-agent-exit-evidence'
 
 /**
  * Resolves wrapper-compatible signal identity against the launch owner.
@@ -40,35 +36,6 @@ function resolveSignalAgentForLaunchOwner(
     return null
   }
   return (resolveCompatibleAgentTypeForOwner(signalAgent, launchAgent) ?? signalAgent) as TuiAgent
-}
-
-/**
- * Probe-free evidence a launched agent exited: title shows no agent, no live
- * hook remains, and either the hook completed or observed activity vanished.
- * Vanished-activity is local-only — remote rows also drop on transport blips.
- */
-export function resolveLaunchedAgentExitEvidence(args: {
-  title: string
-  defaultTitle?: string
-  isRemote: boolean
-  hasObservedAgentSignal: boolean
-  hookAgent: TuiAgent | null
-  siblingHookAgent?: TuiAgent | null
-  hasCompletedHook: boolean
-  processAgent?: TuiAgent | null
-  processShellForeground?: boolean
-}): boolean {
-  if (args.hookAgent || args.siblingHookAgent || args.processAgent) {
-    return false
-  }
-  // Why: OSC 133;D (foreground back at shell) is title-independent exit evidence; local-only — remote panes have no shell-foreground producer.
-  if (!args.isRemote && args.processShellForeground && args.hasObservedAgentSignal) {
-    return true
-  }
-  if (!titleShowsNoAgent(args.title, args.defaultTitle)) {
-    return false
-  }
-  return args.hasCompletedHook || (!args.isRemote && args.hasObservedAgentSignal)
 }
 
 export function resolveTabAgentFromSignals(args: {
@@ -268,14 +235,12 @@ export function useTabAgent(tab: TerminalTab): TuiAgent | null {
     }
     return (s.ptyIdsByTabId[tab.id] ?? []).length <= 1
   })
-  const hasRemoteRuntimePty = useAppStore((s) => {
-    const layout = s.terminalLayoutsByTabId[tab.id]
-    const ptyIds = new Set(s.ptyIdsByTabId[tab.id] ?? [])
-    for (const ptyId of Object.values(layout?.ptyIdsByLeafId ?? {})) {
-      ptyIds.add(ptyId)
-    }
-    return [...ptyIds].some((ptyId) => parseRemoteRuntimePtyId(ptyId) !== null)
-  })
+  const hasRemoteRuntimePty = useAppStore((s) =>
+    hasRemoteRuntimePtyForTab(
+      s.ptyIdsByTabId[tab.id],
+      s.terminalLayoutsByTabId[tab.id]?.ptyIdsByLeafId
+    )
+  )
   const isRemoteWorktree = useAppStore((s) => worktreeUsesRemoteConnection(s, tab.worktreeId))
   const isRemoteLike = isRemoteWorktree || hasRemoteRuntimePty
 
@@ -298,7 +263,13 @@ export function useTabAgent(tab: TerminalTab): TuiAgent | null {
       ? explicitTitleAgent === tab.launchAgent
       : Boolean(explicitTitleAgent || siblingHookAgent)
     // Why: a recognized foreground process arms exit clearing even for agents with no hook or title integration.
-    if (focusedHookAgent || completedHookEvidence || processAgent || fallbackAgentSignal) {
+    // Why the ref gate: this effect re-runs on every title frame, and re-dispatching an
+    // already-true flag costs SortableTab a second commit each time — and names its fiber
+    // in #185 stacks driven elsewhere (see shared/react-update-depth-attribution.ts).
+    if (
+      !hasObservedAgentSignalRef.current &&
+      (focusedHookAgent || completedHookEvidence || processAgent || fallbackAgentSignal)
+    ) {
       hasObservedAgentSignalRef.current = true
       setHasObservedAgentSignal(true)
     }

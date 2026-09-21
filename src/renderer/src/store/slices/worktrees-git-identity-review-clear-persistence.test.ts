@@ -64,6 +64,7 @@ describe('updateWorktreeGitIdentity', () => {
         linkedBitbucketPR: null,
         linkedAzureDevOpsPR: null,
         linkedGiteaPR: null,
+        linkedCodeMR: null,
         pushTarget: undefined
       }
     })
@@ -98,6 +99,7 @@ describe('updateWorktreeGitIdentity', () => {
         linkedBitbucketPR: null,
         linkedAzureDevOpsPR: null,
         linkedGiteaPR: null,
+        linkedCodeMR: null,
         pushTarget: undefined
       }
     })
@@ -146,6 +148,7 @@ describe('updateWorktreeGitIdentity', () => {
           linkedBitbucketPR: null,
           linkedAzureDevOpsPR: null,
           linkedGiteaPR: null,
+          linkedCodeMR: null,
           pushTarget: undefined
         }
       })
@@ -194,6 +197,7 @@ describe('updateWorktreeGitIdentity', () => {
           linkedBitbucketPR: null,
           linkedAzureDevOpsPR: null,
           linkedGiteaPR: null,
+          linkedCodeMR: null,
           pushTarget: nextPushTarget
         }
       })
@@ -246,6 +250,7 @@ describe('updateWorktreeGitIdentity', () => {
         linkedBitbucketPR: null,
         linkedAzureDevOpsPR: null,
         linkedGiteaPR: null,
+        linkedCodeMR: null,
         pushTarget: undefined
       }
     })
@@ -307,6 +312,7 @@ describe('updateWorktreeGitIdentity', () => {
         linkedBitbucketPR: null,
         linkedAzureDevOpsPR: null,
         linkedGiteaPR: null,
+        linkedCodeMR: null,
         pushTarget: undefined
       }
     })
@@ -356,6 +362,7 @@ describe('updateWorktreeGitIdentity', () => {
         linkedBitbucketPR: null,
         linkedAzureDevOpsPR: null,
         linkedGiteaPR: null,
+        linkedCodeMR: null,
         pushTarget: undefined
       }
     })
@@ -396,6 +403,7 @@ describe('updateWorktreeGitIdentity', () => {
           linkedBitbucketPR: null,
           linkedAzureDevOpsPR: null,
           linkedGiteaPR: null,
+          linkedCodeMR: null,
           pushTarget: undefined
         }
       })

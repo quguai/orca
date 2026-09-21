@@ -4,11 +4,10 @@ import type { AgentHookInstallState, AgentHookInstallStatus } from '../../shared
 import type { AgentHookSource } from '../../shared/agent-hook-relay'
 import {
   buildManagedCommandHook,
-  buildWindowsAgentHookCurlPostCommand,
   readHooksJson,
   writeHooksJson,
-  writeManagedScript,
-  type HooksConfig
+  type HooksConfig,
+  writeManagedScript
 } from '../agent-hooks/installer-utils'
 import {
   readHooksJsonRemote,
@@ -16,12 +15,9 @@ import {
   writeManagedScriptRemote
 } from '../agent-hooks/installer-utils-remote'
 import { refreshManagedScriptIfPresent } from '../agent-hooks/managed-hook-script-refresh'
-import {
-  buildPosixHookPayloadCapture,
-  buildWindowsHookEnvironmentGuardLines,
-  buildWindowsHookStdinDrainEpilogue,
-  WINDOWS_HOOK_STDIN_DRAIN_LABEL
-} from '../agent-hooks/hook-stdin-contract'
+import { getManagedScript } from './hook-script'
+
+export { getManagedScript }
 import { getManagedStatusLineScript } from './statusline-script'
 import {
   applyManagedHooks,
@@ -53,106 +49,25 @@ type ClaudeHookServiceOptions = {
   hookSource?: AgentHookSource
 }
 
+type ClaudeHookInstallOptions = {
+  claudeVersion?: string
+}
+
 const DEFAULT_CLAUDE_HOOK_SERVICE_OPTIONS: ClaudeHookServiceOptions = {
   agent: 'claude',
   displayName: 'Claude',
   settings: CLAUDE_HOOK_SETTINGS
 }
 
-function getManagedScript(
-  target: 'local' | 'posix' = 'local',
-  options: { skipWhenDevinImportsClaude?: boolean; hookSource?: AgentHookSource } = {}
-): string {
-  const hookSource = options.hookSource ?? 'claude'
-  if (target === 'local' && process.platform === 'win32') {
-    return [
-      '@echo off',
-      'setlocal',
-      // Why: Claude-compatible permission hooks fail closed on empty stdout (#14818).
-      'echo {}',
-      // Why: refresh endpoint coordinates for PTYs surviving an Orca restart.
-      'if defined ORCA_AGENT_HOOK_ENDPOINT if exist "%ORCA_AGENT_HOOK_ENDPOINT%" call "%ORCA_AGENT_HOOK_ENDPOINT%" 2>nul',
-      // Why (#11549): the env guards must outrank the Devin skip — the Devin skip parks in more.com,
-      // and outside an Orca pane the caller can abandon stdin, so more.com never returns.
-      ...buildWindowsHookEnvironmentGuardLines(),
-      // Why: a backgrounded session runs in a daemon worker that inherited the dispatching
-      // pane's env, so ORCA_PANE_KEY names a pane this session does not run in (#9236).
-      // Why exit, not the drain label: the drain parks in more.com and a worker is outside
-      // an Orca pane — the abandoned-stdin hang #11549 guards against.
-      'if not "%CLAUDE_JOB_DIR%"=="" exit /b 0',
-      ...(options.skipWhenDevinImportsClaude
-        ? [
-            // Why: Devin imports .claude hooks by default; skip Orca's managed hook there so status posts stay attributed to Devin.
-            `if not "%DEVIN_PROJECT_DIR%"=="" goto :${WINDOWS_HOOK_STDIN_DRAIN_LABEL}`
-          ]
-        : []),
-      // Why: refresh endpoint coordinates for PTYs surviving an Orca restart.
-      'if defined ORCA_AGENT_HOOK_ENDPOINT if exist "%ORCA_AGENT_HOOK_ENDPOINT%" call "%ORCA_AGENT_HOOK_ENDPOINT%" 2>nul',
-      ...buildWindowsHookEnvironmentGuardLines(),
-      // Why: post via curl.exe, not a second PowerShell.
-      buildWindowsAgentHookCurlPostCommand(hookSource),
-      'exit /b 0',
-      ...buildWindowsHookStdinDrainEpilogue(),
-      ''
-    ].join('\r\n')
-  }
-
-  return [
-    '#!/bin/sh',
-    // Why: Claude-compatible permission hooks fail closed on empty stdout (#14818).
-    'printf "{}\\n"',
-    ...buildPosixHookPayloadCapture(),
-    ...(options.skipWhenDevinImportsClaude
-      ? [
-          // Why: Devin imports .claude hooks by default; skip Orca's managed hook there so status posts stay attributed to Devin.
-          'if [ -n "$DEVIN_PROJECT_DIR" ]; then',
-          '  exit 0',
-          'fi'
-        ]
-      : []),
-    // Why: a backgrounded session runs in a daemon worker that inherited the dispatching
-    // pane's env, so ORCA_PANE_KEY names a pane this session does not run in (#9236).
-    'if [ -n "$CLAUDE_JOB_DIR" ]; then',
-    '  exit 0',
-    'fi',
-    // Why: refresh endpoint coordinates for PTYs surviving an Orca restart.
-    // Why: suppress parse errors so they neither leak nor trip outer set -e.
-    'if [ -n "$ORCA_AGENT_HOOK_ENDPOINT" ] && [ -r "$ORCA_AGENT_HOOK_ENDPOINT" ]; then',
-    '  . "$ORCA_AGENT_HOOK_ENDPOINT" 2>/dev/null || :',
-    'fi',
-    'if [ -z "$ORCA_AGENT_HOOK_PORT" ] || [ -z "$ORCA_AGENT_HOOK_TOKEN" ] || [ -z "$ORCA_PANE_KEY" ]; then',
-    '  exit 0',
-    'fi',
-    // Why: worktreeId embeds a filesystem path, so hand-building JSON in POSIX
-    // shell is not safe once a path contains quotes or newlines. Post the raw
-    // hook payload plus metadata as form fields and let the receiver parse it.
-    // Timeout caps best-effort hook posts if the local listener stalls.
-    // Why: pipe payload to curl's stdin (`payload@-`) instead of an inline
-    // `payload=$VALUE` arg, so tens-of-KB tool output stays off the curl
-    // command line (EDR command-line false positives). Wire body is identical.
-    `printf '%s' "$payload" | curl -sS -X POST "http://127.0.0.1:\${ORCA_AGENT_HOOK_PORT}/hook/${hookSource}" \\`,
-    '  --connect-timeout 0.5 --max-time 1.5 \\',
-    '  -H "Content-Type: application/x-www-form-urlencoded" \\',
-    '  -H "X-Orca-Agent-Hook-Token: ${ORCA_AGENT_HOOK_TOKEN}" \\',
-    '  --data-urlencode "paneKey=${ORCA_PANE_KEY}" \\',
-    '  --data-urlencode "tabId=${ORCA_TAB_ID}" \\',
-    '  --data-urlencode "launchToken=${ORCA_AGENT_LAUNCH_TOKEN}" \\',
-    '  --data-urlencode "worktreeId=${ORCA_WORKTREE_ID}" \\',
-    '  --data-urlencode "env=${ORCA_AGENT_HOOK_ENV}" \\',
-    '  --data-urlencode "version=${ORCA_AGENT_HOOK_VERSION}" \\',
-    '  --data-urlencode "payload@-" >/dev/null 2>&1 || true',
-    'exit 0',
-    ''
-  ].join('\n')
-}
-
 export class ClaudeHookService {
   private get managedScriptOptions(): {
     skipWhenDevinImportsClaude: boolean
+    skipWhenGrokImportsClaude: boolean
     hookSource?: AgentHookSource
   } {
     return {
       skipWhenDevinImportsClaude: this.options.agent === 'claude',
+      skipWhenGrokImportsClaude: this.options.agent === 'claude',
       hookSource: this.options.hookSource
     }
   }
@@ -213,7 +128,7 @@ export class ClaudeHookService {
   async refreshManagedScripts(): Promise<void> {
     await refreshManagedScriptIfPresent(
       getManagedScriptPath(this.options.settings),
-      getManagedScript('local', { skipWhenDevinImportsClaude: this.options.agent === 'claude' })
+      getManagedScript('local', this.managedScriptOptions)
     )
     // Why: no agent gate — the statusline script only ever exists for claude, so presence is the gate.
     await refreshManagedScriptIfPresent(
@@ -222,7 +137,7 @@ export class ClaudeHookService {
     )
   }
 
-  install(): AgentHookInstallStatus {
+  install(options: ClaudeHookInstallOptions = {}): AgentHookInstallStatus {
     const configPath = getConfigPath(this.options.settings)
     const scriptPath = getManagedScriptPath(this.options.settings)
     const config = readHooksJson(configPath)
@@ -237,8 +152,10 @@ export class ClaudeHookService {
     }
 
     const hook = getManagedLifecycleHook(scriptPath, this.options.settings)
-    const scriptName = getManagedScriptFileName(this.options.settings)
-    let nextConfig = applyManagedHooks(config, hook, scriptName, this.options.settings.events)
+    let nextConfig = applyManagedHooks(config, hook, getManagedScriptFileName(this.options.settings), {
+      ...(this.options.agent === 'claude' ? options : {}),
+      events: this.options.settings.events
+    })
     writeManagedScript(scriptPath, getManagedScript('local', this.managedScriptOptions))
     // Why: the statusline usage feed is Claude-only — OpenClaude data would be misattributed to the Claude provider.
     if (this.options.agent === 'claude') {
@@ -273,7 +190,11 @@ export class ClaudeHookService {
   }
 
   // Why: install the Claude hook on the remote box (via SFTP); POSIX-only by design (Windows-remote deferred).
-  async installRemote(sftp: SFTPWrapper, remoteHome: string): Promise<AgentHookInstallStatus> {
+  async installRemote(
+    sftp: SFTPWrapper,
+    remoteHome: string,
+    options: ClaudeHookInstallOptions = {}
+  ): Promise<AgentHookInstallStatus> {
     // Why: remote Windows is unsupported; local process.platform cannot identify the remote OS.
     const remoteConfigPath = getRemoteConfigPath(remoteHome, this.options.settings)
     const remoteScriptFileName = getPosixManagedScriptFileName(this.options.settings)
@@ -297,7 +218,10 @@ export class ClaudeHookService {
         config,
         hook,
         remoteScriptFileName,
-        this.options.settings.events
+        {
+          ...(this.options.agent === 'claude' ? options : {}),
+          events: this.options.settings.events
+        }
       )
 
       // Why: write scripts before settings to avoid settings pointing to missing scripts.

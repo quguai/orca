@@ -1,8 +1,13 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  clearAoneNestedRepoScanCache,
   loadAoneChildMergeRequests,
   loadAoneWorkspaceMergeRequests
 } from './AoneWorkspaceMergeRequests'
+
+beforeEach(() => {
+  clearAoneNestedRepoScanCache()
+})
 
 describe('loadAoneChildMergeRequests', () => {
   it('queries each nested repository current branch and preserves merged reviews', async () => {

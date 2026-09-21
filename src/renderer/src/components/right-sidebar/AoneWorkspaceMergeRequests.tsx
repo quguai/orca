@@ -99,6 +99,11 @@ async function loadAoneMergeRequestForRepositoryCurrentBranch({
 const SCAN_CACHE_TTL_MS = 10_000
 const nestedRepoScanCache = new Map<string, { fetchedAt: number; repos: NestedRepoCandidate[] }>()
 
+/** Tests reset this between cases; production relies on the TTL alone. */
+export function clearAoneNestedRepoScanCache(): void {
+  nestedRepoScanCache.clear()
+}
+
 export async function loadAoneChildMergeRequests({
   parentWorktreePath,
   scanNestedRepos,

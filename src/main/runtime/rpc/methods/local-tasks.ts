@@ -10,7 +10,7 @@ import type {
   RuntimeLocalTaskShowResult
 } from '../../../../shared/local-task-rpc-types'
 import { readData, type LocalTasksFileV3 } from '../../../local-tasks/store'
-import { defineMethod, InvalidArgumentError, type RpcMethod } from '../core'
+import { defineMethod, InvalidArgumentError } from '../core'
 
 const LIST_PARAMS = z.object({
   includeArchived: z.boolean().default(false)
@@ -52,7 +52,7 @@ function resolveTask(data: LocalTasksFileV3, selector: string): LocalTask {
   throw new InvalidArgumentError(`Local task not found: ${selector}`)
 }
 
-export const LOCAL_TASK_METHODS: RpcMethod[] = [
+export const LOCAL_TASK_METHODS = [
   defineMethod({
     name: 'localTasks.list',
     params: LIST_PARAMS,

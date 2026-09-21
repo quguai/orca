@@ -1,6 +1,8 @@
+import type { ExecutionHostId } from '../../shared/execution-host'
 import type { HostedReviewInfo } from '../../shared/hosted-review'
 import { assertRemoteUrlReadable } from '../git/remote-url-probe'
 import { getForgeProviderForRepository, type ForgeProviderId } from './forge-provider'
+import { hostedReviewSshConnectionId } from './hosted-review-execution-host'
 import { withHostedReviewBranchCache } from './hosted-review-branch-cache'
 import {
   getHostedReviewLocalGitOptions,
@@ -33,7 +35,7 @@ function reviewLinkForProvider(
 export async function getHostedReviewForBranch(
   input: {
     repoPath: string
-    connectionId?: string | null
+    executionHostId: ExecutionHostId
     branch: string
     linkedGitHubPR?: number | null
     fallbackGitHubPR?: number | null
@@ -75,7 +77,7 @@ export async function getHostedReviewForBranch(
     async () => {
       const provider = await getForgeProviderForRepository({
         repoPath: input.repoPath,
-        connectionId: input.connectionId,
+        executionHostId: input.executionHostId,
         ...(input.localGitExecOptions ? { localGitExecOptions: input.localGitExecOptions } : {})
       })
       if (!provider) {
@@ -85,14 +87,15 @@ export async function getHostedReviewForBranch(
         // Throwing keeps it on the cache's failure path instead (P1-D).
         await assertRemoteUrlReadable({
           repoPath: input.repoPath,
-          connectionId: input.connectionId,
+          // The probe is the leaf that still dials: it takes the SSH target, not the host id.
+          connectionId: hostedReviewSshConnectionId(input.executionHostId),
           ...getHostedReviewLocalGitOptions(input)
         })
         return null
       }
       return provider.getReviewForBranch({
         repoPath: input.repoPath,
-        connectionId: input.connectionId,
+        executionHostId: input.executionHostId,
         branch: branchName,
         ...(input.localGitExecOptions ? { localGitExecOptions: input.localGitExecOptions } : {}),
         githubCurrentHeadOid: headOid,

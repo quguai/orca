@@ -5,7 +5,7 @@ import { translate } from '@/i18n/i18n'
 import { openHttpLink } from '@/lib/http-link-routing'
 import { cn } from '@/lib/utils'
 import type { HostedReviewState } from '../../../../shared/hosted-review'
-import { prStateColor } from './checks-panel-content'
+import { prStateColor } from './checks-panel/check-presentation'
 
 export type AoneWorkspaceMergeRequestRowReview = {
   id: number

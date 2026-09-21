@@ -11,8 +11,7 @@ import {
   resolveTuiAgentLaunchArgs,
   resolveTuiAgentLaunchEnv
 } from '../../../shared/tui-agent-launch-defaults'
-import { TUI_AGENT_CONFIG } from '../../../shared/tui-agent-config'
-import { resolveAgentBackgroundLaunchHost } from '@/lib/agent-background-session-launch-host'
+import { requireTuiAgentConfig } from '../../../shared/require-tui-agent-config'
 import { makePaneKey } from '../../../shared/stable-pane-id'
 import {
   registerEagerPtyBuffer,
@@ -28,8 +27,10 @@ import {
   subscribeToRuntimeTerminalData,
   toRemoteRuntimePtyId
 } from '@/runtime/runtime-terminal-stream'
-import { createSshBackgroundStartupDelivery } from '@/lib/ssh-background-startup-delivery'
-import { shouldUseShellReadyStartupDelivery } from '../../../shared/codex-startup-delivery'
+import {
+  createSshBackgroundStartupDelivery,
+  sshBackgroundLaunchWaitsForShellReady
+} from '@/lib/ssh-background-startup-delivery'
 import { isMainTerminalSideEffectAuthorityForPty } from '@/components/terminal-pane/terminal-side-effect-facts-handler'
 import { resolveLocalWindowsAgentStartupShell } from '../../../shared/windows-terminal-shell'
 import { runBestEffortAgentBackgroundCleanups } from '@/lib/agent-background-session-cleanup'
@@ -40,42 +41,23 @@ import {
 } from '@/lib/adopt-agent-background-session-tab'
 import { createBackgroundAgentStatusConsumer } from '@/lib/background-agent-status-consumer'
 import { isWslUncPath } from '../../../shared/wsl-paths'
-import {
-  markAgentBackgroundWorkspaceTrusted,
-  resolveAgentBackgroundWorkspaceTarget
-} from '@/lib/agent-background-workspace-target'
+import { prepareAgentBackgroundWorkspace } from '@/lib/agent-background-workspace-target'
+import { runtimeWaitExitCode, settleTabPtyBinding } from '@/lib/agent-background-session-exit'
 
 export async function launchAgentBackgroundSession(
   args: LaunchAgentBackgroundSessionArgs
 ): Promise<LaunchAgentBackgroundSessionResult | null> {
   const { agent, worktreeId, prompt, launchSource, title, onData, onExit, onAgentStatus } = args
   const store = useAppStore.getState()
-  const {
-    cwd: workspaceCwd,
-    isFloatingWorkspace,
-    repo
-  } = await resolveAgentBackgroundWorkspaceTarget({
-    worktreeId,
-    worktrees: store.allWorktrees(),
-    knownWorktree: store.getKnownWorktreeById(worktreeId),
-    repos: store.repos,
-    floatingTerminalCwd: store.settings?.floatingTerminalCwd
-  })
-  const launchHost = resolveAgentBackgroundLaunchHost({
+  const { workspaceCwd, isFloatingWorkspace, launchHost } = await prepareAgentBackgroundWorkspace({
     store,
     worktreeId,
-    worktreePath: workspaceCwd,
-    repo
+    agent
   })
-  await markAgentBackgroundWorkspaceTrusted(
-    TUI_AGENT_CONFIG[agent].preflightTrust,
-    workspaceCwd,
-    launchHost.connectionId
-  )
   const { platform: launchPlatform, isRemote } = launchHost
   const trimmedPrompt = prompt?.trim() ?? ''
   const hasPrompt = trimmedPrompt.length > 0
-  const isFollowupPath = TUI_AGENT_CONFIG[agent].promptInjectionMode === 'stdin-after-start'
+  const isFollowupPath = requireTuiAgentConfig(agent).promptInjectionMode === 'stdin-after-start'
 
   const pasteDraftAfterLaunch = hasPrompt && isFollowupPath ? trimmedPrompt : null
   const startupPlan = buildAgentStartupPlan({
@@ -111,11 +93,7 @@ export async function launchAgentBackgroundSession(
   const sshStartupDelivery = createSshBackgroundStartupDelivery({
     command: sshConnectionId ? startupPlan.launchCommand : null,
     waitForShellReady:
-      Boolean(sshConnectionId) &&
-      shouldUseShellReadyStartupDelivery({
-        command: startupPlan.launchCommand,
-        startupCommandDelivery: startupPlan.startupCommandDelivery
-      }),
+      Boolean(sshConnectionId) && sshBackgroundLaunchWaitsForShellReady(startupPlan),
     write: (ptyId, data) => window.api.pty.write(ptyId, data)
   })
   // Route by the worktree's owner host, not the focused runtime.
@@ -124,7 +102,9 @@ export async function launchAgentBackgroundSession(
   )
   let ptyId = '',
     runtimeTerminalHandle: string | null = null
-  let returnedLaunchConfig: typeof startupPlan.launchConfig | undefined
+  // What the local spawn answered and later steps still need: which lifetime of `ptyId` this launch
+  // owns, and the config the host actually launched. Both absent for a runtime terminal.
+  let spawned: { incarnationId?: string; launchConfig?: typeof startupPlan.launchConfig } = {}
   let tab: ReturnType<typeof store.createTab> | null = null
   let exitHandled = false,
     eagerPtyBuffer: EagerPtyHandle | null = null
@@ -140,7 +120,7 @@ export async function launchAgentBackgroundSession(
     unsubscribeData()
     sshStartupDelivery.clear()
     if (tab) {
-      useAppStore.getState().clearTabPtyId(tab.id, exitPtyId)
+      settleTabPtyBinding(tab.id, exitPtyId, code)
     }
     useAppStore.getState().clearAgentLaunchConfig(paneKey)
     onExit?.(exitPtyId, code)
@@ -214,7 +194,8 @@ export async function launchAgentBackgroundSession(
         }
       })
       ptyId = result.id
-      returnedLaunchConfig = result.launchConfig
+      spawned = result
+      sshStartupDelivery.applyHostShellReadyArmed(result.shellReadyArmed)
     }
     const adopted = await adoptAgentBackgroundSessionTab({
       store,
@@ -222,7 +203,7 @@ export async function launchAgentBackgroundSession(
       reservedTabId,
       ptyId,
       paneKey,
-      launchConfig: returnedLaunchConfig ?? startupPlan.launchConfig,
+      launchConfig: spawned.launchConfig ?? startupPlan.launchConfig,
       launchRegistration,
       runtimeTarget,
       runtimeTerminalHandle,
@@ -271,10 +252,12 @@ export async function launchAgentBackgroundSession(
         { terminal: runtimeTerminalHandle, for: 'exit' },
         { timeoutMs: 24 * 60 * 60 * 1000 }
       )
-        .then((result) => handleExit(ptyId, result.wait.exitCode ?? 0))
+        .then((result) => handleExit(ptyId, runtimeWaitExitCode(result.wait)))
         .catch(() => {})
     } else {
-      eagerPtyBuffer = registerEagerPtyBuffer(ptyId, handleExit)
+      // Why the incarnation: a relay-recycled id can hold the previous owner's exit, and draining
+      // that into this handler tears the agent session down seconds after it launched.
+      eagerPtyBuffer = registerEagerPtyBuffer(ptyId, handleExit, spawned.incarnationId)
       unsubscribeData = subscribeToPtyData(ptyId, handleData)
       // Why: the sidecar survives workspace attachment after the eager exit handler is disposed.
       unsubscribeExit = subscribeToPtyExit(ptyId, (code) => handleExit(ptyId, code))

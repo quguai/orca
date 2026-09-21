@@ -155,6 +155,7 @@ export function CompactAgentSummaryButton({
                     size="sm"
                     workingVariant="activity-orbit"
                     phaseKey={group.agents[0]?.paneKey}
+                    tooltipSide="right"
                   />
                   {/* Why: same-state agent identities read as one status cluster;
                       overlapping them saves width without merging different states. */}

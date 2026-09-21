@@ -133,6 +133,7 @@ export const HANDLER_GROUPS: readonly HandlerGroup[] = [
       'orchestration dispatch-show',
       'orchestration coordinator-start',
       'orchestration coordinator-stop',
+      'orchestration request-show',
       'orchestration gate-create',
       'orchestration gate-resolve',
       'orchestration gate-list',
@@ -255,5 +256,10 @@ export const HANDLER_GROUPS: readonly HandlerGroup[] = [
     name: 'skills',
     keys: ['skills list', 'skills get', 'skills install', 'skills update'],
     load: async () => (await import('./handlers/skills.js')).SKILL_HANDLERS
+  },
+  {
+    name: 'search',
+    keys: ['search'],
+    load: async () => (await import('./handlers/search.js')).SEARCH_HANDLERS
   }
 ]

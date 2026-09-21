@@ -13,7 +13,7 @@ import type {
   AoneWorkspaceParentReview
 } from './AoneWorkspaceMergeRequests'
 import { mapAoneMergeRequestState } from './aone-review-normalization'
-import { prStateColor } from './checks-panel-content'
+import { prStateColor } from './checks-panel/check-presentation'
 
 type AoneWorkspaceMergeRequestOverviewProps = {
   parentRepoName: string

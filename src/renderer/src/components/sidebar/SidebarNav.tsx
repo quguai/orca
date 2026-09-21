@@ -3,7 +3,6 @@ import { Bell, BookOpen, CalendarClock, EyeOff, Files, Search, Smartphone } from
 import { useTranslation } from 'react-i18next'
 import { useAppStore } from '@/store'
 import { cn } from '@/lib/utils'
-import type { GlobalSettings } from '../../../../shared/global-settings-types'
 import { useActivityUnreadCount } from '@/components/activity/useActivityUnreadCount'
 import { useShortcutKeyComboDetails } from '@/hooks/useShortcutLabel'
 import { ShortcutKeyCombo } from '@/components/ShortcutKeyCombo'
@@ -16,29 +15,18 @@ import { SidebarTaskNavButton } from './SidebarTaskNavButton'
 import { HideSidebarMenu } from './sidebar-nav-controls'
 import { translate } from '@/i18n/i18n'
 import { lazyWithRetry } from '@/lib/lazy-with-retry'
+import type { GlobalSettings } from '../../../../shared/global-settings-types'
 
 export { getSetupGuideSidebarEntryReady, shouldShowSetupGuideEntry } from './SetupGuideSidebarEntry'
 
-export function shouldShowAgentsButton(
-  settings: Pick<GlobalSettings, 'experimentalActivity'> | null | undefined
-): boolean {
-  return settings?.experimentalActivity === true
-}
-
-export function shouldShowAgentDashboardButton(
-  settings: Pick<GlobalSettings, 'experimentalAgentDashboardPopout'> | null | undefined
-): boolean {
-  return settings?.experimentalAgentDashboardPopout === true
-}
-
 export function shouldShowMobileButton(
-  settings: Pick<GlobalSettings, 'showMobileButton'> | null | undefined
+  settings: Partial<Pick<GlobalSettings, 'showMobileButton'>> | null | undefined
 ): boolean {
   return settings?.showMobileButton !== false
 }
 
 export function shouldShowAutomationsButton(
-  settings: Pick<GlobalSettings, 'showAutomationsButton'> | null | undefined
+  settings: Partial<Pick<GlobalSettings, 'showAutomationsButton'>> | null | undefined
 ): boolean {
   return settings?.showAutomationsButton !== false
 }
@@ -50,9 +38,21 @@ export function shouldShowSkillsButton(
 }
 
 export function shouldShowArtifactsButton(
-  settings: Pick<GlobalSettings, 'showArtifactsButton'> | null | undefined
+  settings: Partial<Pick<GlobalSettings, 'showArtifactsButton'>> | null | undefined
 ): boolean {
   return settings?.showArtifactsButton === true
+}
+
+export function shouldShowAgentsButton(
+  settings: Pick<GlobalSettings, 'experimentalActivity'> | null | undefined
+): boolean {
+  return settings?.experimentalActivity === true
+}
+
+export function shouldShowAgentDashboardButton(
+  settings: Partial<Pick<GlobalSettings, 'experimentalAgentDashboardPopout'>> | null | undefined
+): boolean {
+  return settings?.experimentalAgentDashboardPopout === true
 }
 
 const AgentDashboardSidebarEntry = lazyWithRetry(() => import('./AgentDashboardSidebarEntry'))
@@ -86,7 +86,7 @@ const SidebarNav = React.memo(function SidebarNav() {
   const activityActive = activeView === 'activity'
   const mobileActive = activeView === 'mobile'
   const artifactsActive = activeView === 'artifacts'
-  const activityUnreadCount = useActivityUnreadCount(showAgentsButton, 'sidebar-badge')
+  const activityUnreadCount = useActivityUnreadCount()
   const mobileOnboardingBadge = useMobileSidebarOnboardingBadge(showMobileButton)
   const hideAutomationsButton = React.useCallback(() => {
     void updateSettings({ showAutomationsButton: false })
@@ -113,7 +113,7 @@ const SidebarNav = React.memo(function SidebarNav() {
           'auto.components.sidebar.SidebarNav.0c3395fd32',
           'Search worktrees and browser tabs'
         )}
-        className="group flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] font-medium tracking-tight text-worktree-sidebar-foreground/60 transition-colors hover:bg-worktree-sidebar-foreground/8"
+        className="group flex w-full items-center gap-2 rounded-md bg-worktree-sidebar-foreground/5 px-2 py-1.5 text-left text-[13px] font-medium tracking-tight text-worktree-sidebar-foreground/60 transition-colors hover:bg-worktree-sidebar-foreground/8"
       >
         <Search
           className="size-4 shrink-0 text-worktree-sidebar-foreground/30"

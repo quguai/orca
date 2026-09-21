@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 const {
   handleMock,
   discoverSkillsMock,
-  discoverSkillsInWslMock,
+  discoverSkillObservationInWslMock,
   inventorySkillFreshnessMock,
   getDefaultWslDistroMock,
   getWslHomeMock,
@@ -11,7 +11,7 @@ const {
 } = vi.hoisted(() => ({
   handleMock: vi.fn(),
   discoverSkillsMock: vi.fn(),
-  discoverSkillsInWslMock: vi.fn(),
+  discoverSkillObservationInWslMock: vi.fn(),
   inventorySkillFreshnessMock: vi.fn(),
   getDefaultWslDistroMock: vi.fn(),
   getWslHomeMock: vi.fn(),
@@ -37,7 +37,7 @@ vi.mock('../skills/discovery', () => ({
 }))
 
 vi.mock('../skills/skill-discovery-wsl', () => ({
-  discoverSkillsInWsl: discoverSkillsInWslMock
+  discoverSkillObservationInWsl: discoverSkillObservationInWslMock
 }))
 
 vi.mock('../skills/skill-freshness-inventory', () => ({
@@ -60,6 +60,7 @@ vi.mock('../wsl', () => ({
 }))
 
 import { registerSkillsHandlers } from './skills'
+import { clearSkillDiscoveryCaches } from '../skills/skill-discovery-target'
 
 describe('registerSkillsHandlers', () => {
   const originalPlatform = Object.getOwnPropertyDescriptor(process, 'platform')
@@ -101,9 +102,10 @@ describe('registerSkillsHandlers', () => {
   }
 
   beforeEach(() => {
+    clearSkillDiscoveryCaches()
     handleMock.mockReset()
     discoverSkillsMock.mockReset()
-    discoverSkillsInWslMock.mockReset()
+    discoverSkillObservationInWslMock.mockReset()
     getDefaultWslDistroMock.mockReset()
     getWslHomeMock.mockReset()
     store.getRepos.mockClear()
@@ -116,7 +118,7 @@ describe('registerSkillsHandlers', () => {
     parseWslPathMock.mockReset()
     parseWslPathMock.mockReturnValue(null)
     discoverSkillsMock.mockResolvedValue({ skills: [], sources: [], scannedAt: 1 })
-    discoverSkillsInWslMock.mockResolvedValue({ skills: [], sources: [], scannedAt: 1 })
+    discoverSkillObservationInWslMock.mockResolvedValue({ rows: [], sources: [], scannedAt: 1 })
     inventorySkillFreshnessMock.mockResolvedValue({
       schemaVersion: 1,
       installations: [],
@@ -210,10 +212,30 @@ describe('registerSkillsHandlers', () => {
 
     expect(getDefaultWslDistroMock).not.toHaveBeenCalled()
     expect(getWslHomeMock).toHaveBeenCalledWith('Ubuntu')
-    expect(discoverSkillsInWslMock).toHaveBeenCalledWith({
+    expect(discoverSkillObservationInWslMock).toHaveBeenCalledWith({
       distro: 'Ubuntu',
       homeDir: '/home/alice',
-      cwd: '/home/alice'
+      sourceKinds: undefined
+    })
+  })
+
+  it('shares the home and bundled WSL scan across name-filtered requests', async () => {
+    const handler = getHandler('skills:discover')
+
+    for (const name of ['orchestration', 'linear-tickets']) {
+      await handler(null, {
+        runtime: 'wsl',
+        wslDistro: 'Ubuntu',
+        names: [name],
+        sourceKinds: ['home']
+      })
+    }
+
+    expect(discoverSkillObservationInWslMock).toHaveBeenCalledOnce()
+    expect(discoverSkillObservationInWslMock).toHaveBeenCalledWith({
+      distro: 'Ubuntu',
+      homeDir: '/home/alice',
+      sourceKinds: ['bundled', 'home']
     })
   })
 
@@ -235,10 +257,11 @@ describe('registerSkillsHandlers', () => {
       }
     })
 
-    expect(discoverSkillsInWslMock).toHaveBeenCalledWith({
+    expect(discoverSkillObservationInWslMock).toHaveBeenCalledWith({
       distro: 'Ubuntu',
       homeDir: '/home/alice',
-      cwd: '/mnt/c/repo/worktree'
+      cwd: '/mnt/c/repo/worktree',
+      sourceKinds: undefined
     })
   })
 

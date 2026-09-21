@@ -1,12 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { create } from 'zustand'
 import type { AppState } from '../types'
-import {
-  createHostedReviewSlice,
-  getHostedReviewCacheKey,
-  HostedReviewCreationEligibilityTimeoutError,
-  refreshHostedReviewCard
-} from './hosted-review'
+import { createHostedReviewSlice } from './hosted-review'
+import { refreshHostedReviewCard } from './hosted-review-card-refresh'
+import { getHostedReviewCacheKey } from './hosted-review-cache-identity'
+import { HostedReviewCreationEligibilityTimeoutError } from './hosted-review-cache-state'
 import type { HostedReviewInfo } from '../../../../shared/hosted-review'
 
 const runtimeRpc = vi.hoisted(() => ({
@@ -586,6 +584,23 @@ describe('hosted review slice', () => {
       linkedGiteaPR: null,
       linkedCodeMR: null
     })
+  })
+
+  it('marks an explicit card refresh interactive', async () => {
+    const fetchHostedReviewForBranch = vi.fn().mockResolvedValue(null)
+
+    await refreshHostedReviewCard(fetchHostedReviewForBranch, {
+      repoPath: '/repo',
+      repoId: 'repo-id',
+      branch: 'feature/test',
+      admissionTier: 'interactive'
+    })
+
+    expect(fetchHostedReviewForBranch).toHaveBeenCalledWith(
+      '/repo',
+      'feature/test',
+      expect.objectContaining({ admissionTier: 'interactive' })
+    )
   })
 
   it('refetches a fresh null branch result when a linked PR hint is later available', async () => {
